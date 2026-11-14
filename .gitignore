@@ -11,3 +11,4 @@ pipelines/*/cache/
 pipelines/*/.venv/
 .claude/
 *.log
+docs-preview.jpg

@@ -24,6 +24,7 @@ backend/.venv/bin/python backend/tests/smoke_test.py
 
 ## What to try (2 minutes)
 
+0. **Farm overview (the landing page).** The app opens above a real aerial photo of farmland with a slow orbiting camera. Use the arrows (or left/right keys, or swipe on the bottom band on a phone) to switch between Demo Fields A, B and C, click inside the outline to pick a zone, then "Open Field" or "Open zone". "Farm overview" in the workspace header brings you back. Links such as `#/field/field-B/zone/H8` open directly.
 1. **Digital Twin.** Drag to rotate, scroll to zoom. Hover a zone to open its panel; click to pin it. Switch layers along the top: crop health, drought/heat risk, water applied, pesticide coverage, forecast impact, satellite NDVI. With "Height = value" on, problem zones rise out of the field.
 2. **Weather switch.** "This week" uses the live Open-Meteo forecast for the field coordinates. "Aug 2026 heatwave" replays the real hottest week of last summer at the same location, to show how the risk layers respond.
 3. **Replay.** Play or scrub the machine pass; the trail and image pins follow.
@@ -51,6 +52,9 @@ Other endpoints: `GET /api/captures`, `GET /api/captures/{id}/image`, `POST /api
 | Irrigation log, application log, machine path | Simulated | `shared/gen_demo.mjs` |
 | Seeded gallery photos | Real photos, simulated zone assignment | PlantVillage maize leaves (CC BY-SA 3.0); Wikimedia Commons drought-stressed maize (PD / CC BY / CC BY-SA). Attribution files in `frontend/public/demo/images/` |
 | Camera captures | Real when the ESP32 posts; otherwise marked simulated | `POST /api/captures` |
+| Landing-page aerial imagery | Real, public domain | USDA NAIP via USGS The National Map; three reference locations in Yolo County, CA, laid flat (no elevation is invented). Field outlines and names are demo fixtures |
+| Fields B and C | Simulated fixtures, separate from Field A | `shared/gen_demo.mjs`. They run in the browser only; the backend and the camera endpoint serve Field A |
+| Login | Not implemented | The landing page's "Log in" says so. There are no accounts and no private farm data |
 | Weather forecast | Real | Open-Meteo forecast API for 38.543, −121.872 |
 | Heatwave scenario | Real historical week (1–7 Aug 2026) | Open-Meteo archive (ERA5) |
 | Soil moisture history | Real, but modelled reanalysis, not a probe in a field | Open-Meteo archive (ERA5-Land), NASA POWER |

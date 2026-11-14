@@ -5,7 +5,7 @@ import { writeFileSync, mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const OUT = resolve(dirname(fileURLToPath(import.meta.url)), '../frontend/src/data/demo/field.json')
+const DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../frontend/src/data/demo')
 const ROWS = 12, COLS = 12
 const LETTERS = 'ABCDEFGHIJKL'
 
@@ -19,16 +19,18 @@ const NOW = Date.parse('2026-11-14T18:00:00Z')
 const iso = (msAgo) => new Date(NOW - msAgo).toISOString()
 const DAY = 86400000
 
+function build(cfg) {
+seed = cfg.seed
 const zones = []
 for (let r = 0; r < ROWS; r++) {
   for (let c = 0; c < COLS; c++) {
     const id = `${LETTERS[c]}${r + 1}`
     // Smooth synthetic terrain: a low ridge in the north-east, shallow swale in the south-west.
-    const elevation = clamp(0.35 + 0.45 * blob(c, r, 9.5, 2, 3.2) - 0.25 * blob(c, r, 2, 9.5, 2.8) + 0.08 * Math.sin(c * 0.9) * Math.cos(r * 0.7))
+    const elevation = clamp(0.35 + 0.45 * blob(c, r, cfg.ridge[0], cfg.ridge[1], 3.2) - 0.25 * blob(c, r, 2, 9.5, 2.8) + 0.08 * Math.sin(c * 0.9) * Math.cos(r * 0.7))
     // Irrigation under-reaches the north-east corner (demo scenario: uneven coverage).
-    const reach = clamp(1 - 0.75 * blob(c, r, 10.5, 1, 2.6) - 0.15 * blob(c, r, 0, 0, 1.5))
+    const reach = clamp(1 - 0.75 * blob(c, r, cfg.dry[0], cfg.dry[1], cfg.drySize) - 0.15 * blob(c, r, 0, 0, 1.5))
     // A discoloration hot spot in the south-west (demo scenario).
-    const disease = clamp(0.95 * blob(c, r, 2.5, 8.5, 1.7))
+    const disease = clamp(0.95 * blob(c, r, cfg.disease[0], cfg.disease[1], cfg.diseaseSize))
     const dry = clamp(1 - reach)
     const waterHolding = clamp(0.75 - 0.45 * elevation + 0.1 * (rnd() - 0.5)) // sandy on the ridge
     const exposure = clamp(0.3 + 0.6 * elevation + 0.1 * (rnd() - 0.5))
@@ -94,7 +96,7 @@ path.forEach((p, i) => {
   const conf = round(label === 'healthy' ? 0.78 + 0.2 * rnd() : 0.52 + 0.42 * rnd(), 2)
   const id = `capture_${String(captures.length + 1).padStart(3, '0')}`
   captures.push({
-    id, device_id: 'fieldos-sim-01', field_id: 'field-A', zone_id: z.id, reported_zone_id: z.id,
+    id, device_id: 'fieldos-sim-01', field_id: cfg.id, zone_id: z.id, reported_zone_id: z.id,
     captured_at: null, received_at: iso((machine.duration_s - p.t) * 1000 + 20 * 60000),
     capture_uptime_ms: 12000 + p.t * 1000, position: null,
     image_file: `${label}_${String(n).padStart(2, '0')}.jpg`,
@@ -113,13 +115,24 @@ for (const z of zones) {
 }
 
 const field = {
-  id: 'field-A', name: 'Demo Field A', farm: 'Demo Farm — Yolo County, CA', crop: 'Maize',
-  center: { lat: 38.543, lon: -121.872 }, rows: ROWS, cols: COLS, zone_size_m: 30,
+  id: cfg.id, name: cfg.name, farm_id: cfg.farmId, farm: cfg.farm, crop: cfg.crop,
+  center: cfg.center, rows: ROWS, cols: COLS, zone_size_m: 30,
   area_ha: round((ROWS * 30 * COLS * 30) / 10000, 2), area_acres: round((ROWS * 30 * COLS * 30) / 4046.86, 1),
   provenance: 'simulated',
   note: 'Synthetic field. Zone values, irrigation and application logs and the machine path are invented demo data.',
 }
 
-mkdirSync(dirname(OUT), { recursive: true })
+mkdirSync(DIR, { recursive: true })
+const OUT = resolve(DIR, cfg.file)
 writeFileSync(OUT, JSON.stringify({ generated_at: new Date(NOW).toISOString(), field, zones, machine, captures }))
 console.log(`wrote ${OUT}: ${zones.length} zones, ${path.length} path steps, ${captures.length} captures`)
+}
+
+// Field A is the reference demo field (also seeded into the backend). B and C are separate demo fixtures
+// with their own simulated patterns so the three fields never show the same data.
+const FARM = 'Demo Farm — Yolo County, CA'
+;[
+  { file: 'field.json', id: 'field-A', name: 'Demo Field A', farmId: 'farm-demo-1', farm: FARM, crop: 'Maize', center: { lat: 38.543, lon: -121.872 }, seed: 20261114, ridge: [9.5, 2], dry: [10.5, 1], drySize: 2.6, disease: [2.5, 8.5], diseaseSize: 1.7 },
+  { file: 'field-B.json', id: 'field-B', name: 'Demo Field B', farmId: 'farm-demo-1', farm: FARM, crop: 'Maize', center: { lat: 38.5712, lon: -121.908 }, seed: 7741, ridge: [2, 3], dry: [1, 10.5], drySize: 2.2, disease: [8.5, 4], diseaseSize: 1.3 },
+  { file: 'field-C.json', id: 'field-C', name: 'Demo Field C', farmId: 'farm-demo-2', farm: 'Demo Farm South — Yolo County, CA', crop: 'Maize', center: { lat: 38.5105, lon: -121.839 }, seed: 99173, ridge: [6, 9], dry: [6, 0], drySize: 1.8, disease: [10, 10], diseaseSize: 2.3 },
+].forEach(build)

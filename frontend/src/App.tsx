@@ -12,6 +12,8 @@ import ModelEval from './views/ModelEval'
 import DeviceHealth from './views/DeviceHealth'
 import CaptureModal from './components/CaptureModal'
 import Simulator from './panels/Simulator'
+import Landing from './landing/Landing'
+import { FIXTURES } from './data/api'
 
 const NAV: { id: ViewId; name: string; icon: string }[] = [
   { id: 'overview', name: 'Digital Twin', icon: 'M3 7l9-4 9 4-9 4-9-4zm0 5l9 4 9-4M3 17l9 4 9-4' },
@@ -24,18 +26,49 @@ const NAV: { id: ViewId; name: string; icon: string }[] = [
   { id: 'device', name: 'Device Health', icon: 'M6 3h12v18H6zM9 7h6M9 11h6M11 17h2' },
 ]
 
+// Hash routes: "#/" is the farm overview, "#/field/<fieldId>" the workspace, "#/field/<fieldId>/zone/<zoneId>" with a zone selected.
+// Hash routing works unchanged behind the backend, the Vite dev server and static hosting, and keeps back/forward working.
+interface Route { page: 'landing' | 'workspace'; fieldId: string | null; zoneId: string | null }
+function parseRoute(): Route {
+  const m = window.location.hash.match(/^#\/field\/([^/]+)(?:\/zone\/([^/]+))?/)
+  if (m && FIXTURES[decodeURIComponent(m[1])]) return { page: 'workspace', fieldId: decodeURIComponent(m[1]), zoneId: m[2] ? decodeURIComponent(m[2]) : null }
+  return { page: 'landing', fieldId: null, zoneId: null }
+}
+const lastField = () => { try { return localStorage.getItem('gz:lastField') } catch { return null } }
+
 export default function App() {
+  const [route, setRoute] = useState<Route>(parseRoute)
+  useEffect(() => {
+    const on = () => setRoute(parseRoute())
+    window.addEventListener('hashchange', on)
+    return () => window.removeEventListener('hashchange', on)
+  }, [])
+  if (route.page === 'landing') {
+    return <Landing initialFieldId={useStore.getState().loadedFieldId ?? lastField()} onOpen={(fieldId, zoneId) => { window.location.hash = `#/field/${encodeURIComponent(fieldId)}${zoneId ? `/zone/${encodeURIComponent(zoneId)}` : ''}` }} />
+  }
+  return <Workspace fieldId={route.fieldId!} zoneId={route.zoneId} />
+}
+
+function Workspace({ fieldId, zoneId }: { fieldId: string; zoneId: string | null }) {
   const ready = useStore((s) => s.ready)
+  const loaded = useStore((s) => s.loadedFieldId)
   const view = useStore((s) => s.view)
   const modal = useStore((s) => s.modalCapture)
   const init = useStore((s) => s.init)
-  useEffect(() => { init() }, [init])
+  // Load exactly the field named in the URL; a zone is only applied if it exists in that field.
+  useEffect(() => {
+    let cancelled = false
+    const apply = () => { const s = useStore.getState(); if (!cancelled && zoneId && s.zoneById[zoneId]) s.set({ pinned: zoneId, view: 'overview' }) }
+    if (useStore.getState().loadedFieldId !== fieldId) init(fieldId).then(apply)
+    else apply()
+    return () => { cancelled = true }
+  }, [fieldId, zoneId, init])
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { const s = useStore.getState(); if (s.modalCapture) s.set({ modalCapture: null }); else s.set({ pinned: null }) } }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
-  if (!ready) return <div className="grid h-full place-items-center text-mist-400">Loading {PRODUCT_NAME}…</div>
+  if (!ready || loaded !== fieldId) return <div className="grid h-full place-items-center text-mist-400">Loading {PRODUCT_NAME}…</div>
   return (
     <div className="flex h-full min-w-[1180px] bg-ink-950">
       <Sidebar />
@@ -98,13 +131,17 @@ function Header() {
   useEffect(() => { const i = setInterval(() => tick((n) => n + 1), 5000); return () => clearInterval(i) }, [])
   return (
     <header className="flex shrink-0 items-center gap-4 border-b border-ink-700 bg-ink-900 px-4 py-2">
+      <button className="btn" onClick={() => { window.location.hash = '#/' }} aria-label="Back to farm overview">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12.5 4l-6 6 6 6" /></svg>
+        Farm overview
+      </button>
       <div className="leading-tight">
         <div className="text-[13.5px] font-semibold">{field.name}</div>
         <div className="text-[11px] text-mist-400">{field.farm} · {field.crop} · {field.area_acres} ac · {field.rows}×{field.cols} zones</div>
       </div>
       <div className="flex-1" />
       <Stat k="Last sync" v={fmtAgo(lastSync)} />
-      <Stat k="Backend" v={mode === 'live' ? (sseOk ? 'connected, live stream' : 'connected') : 'not running'} dot={mode === 'live' ? '#63d394' : '#7f95a1'} />
+      <Stat k="Backend" v={mode === 'live' ? (sseOk ? 'connected, live stream' : 'connected') : field.id === 'field-A' ? 'not running' : 'demo fixture only'} dot={mode === 'live' ? '#63d394' : '#7f95a1'} />
       <Stat k="Camera" v={hasReal ? `${realDevice!.device_id} · ${fmtAgo(realDevice!.received_at)}` : 'no device seen yet'} dot={hasReal ? '#63d394' : '#f0a93b'} pulse={hasReal} />
       {hasReal ? <span className="chip chip-real">LIVE DEVICE DATA + DEMO DATA</span> : <span className="chip chip-sim">DEMO DATA</span>}
       <button className="btn btn-primary" onClick={() => set({ simOpen: true })}>Simulate capture</button>

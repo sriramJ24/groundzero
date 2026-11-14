@@ -53,3 +53,7 @@ input[type='range'] { accent-color: var(--color-leaf-500); }
 .slide-in { animation: slidein .16s ease-out; }
 @keyframes pulse-dot { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
 .pulse { animation: pulse-dot 1.6s infinite; }
+
+@keyframes landing-pan { from { transform: scale(1.12) translate(-1.5%, -1%) } to { transform: scale(1.12) translate(1.5%, 1%) } }
+.landing-pan { animation: landing-pan 60s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .landing-pan { animation: none; } }

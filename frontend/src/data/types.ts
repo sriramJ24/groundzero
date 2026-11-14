@@ -54,7 +54,7 @@ export interface Zone {
 }
 
 export interface Field {
-  id: string; name: string; farm: string; crop: string
+  id: string; name: string; farm: string; crop: string; farm_id?: string
   center: { lat: number; lon: number }
   rows: number; cols: number; zone_size_m: number
   area_ha: number; area_acres: number

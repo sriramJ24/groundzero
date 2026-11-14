@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { loadAll, loadDataFile, postCapture, postReview, subscribe, type Mode, type UploadInput } from './data/api'
+import { BACKEND_FIELD, loadAll, loadDataFile, postCapture, postReview, subscribe, type Mode, type UploadInput } from './data/api'
 import { buildActions, computeRisk, FALLBACK_WEATHER, healthFromCaptures } from './data/scoring'
 import type { ActionItem, Capture, Field, LayerId, Machine, NdviData, ReviewStatus, Risk, Weather, Zone } from './data/types'
 
@@ -41,7 +41,8 @@ interface State {
   lastSync: number
   resetTick: number
 
-  init: () => Promise<void>
+  init: (fieldId?: string) => Promise<void>
+  loadedFieldId: string | null
   set: (p: Partial<State>) => void
   setHovered: (id: string | null) => void
   togglePin: (id: string | null) => void
@@ -59,8 +60,10 @@ function derive(baseZones: Zone[], captures: Capture[], weather: Weather) {
   return { zones, zoneById, risks, actions: buildActions(zones, risks, captures) }
 }
 
+let unsubscribe: (() => void) | null = null
+
 export const useStore = create<State>((set, get) => ({
-  ready: false, mode: 'demo', sseOk: false, field: null, baseZones: [], zones: [], zoneById: {}, risks: {}, captures: [], machine: null,
+  ready: false, loadedFieldId: null, mode: 'demo', sseOk: false, field: null, baseZones: [], zones: [], zoneById: {}, risks: {}, captures: [], machine: null,
   actions: [], doneActions: {}, weather: FALLBACK_WEATHER, weatherNow: FALLBACK_WEATHER, weatherHeat: null, scenario: 'now', ndvi: null,
   evals: { forecast: null, outcome: null, droughtImage: null, soilForecast: null, soilHistory: null },
   view: 'overview', layer: 'health', extrude: true, hovered: null, pinned: null, zoneTab: 'Health',
@@ -71,12 +74,15 @@ export const useStore = create<State>((set, get) => ({
   togglePin: (id) => set((s) => ({ pinned: id && s.pinned !== id ? id : null })),
   focusZone: (id, tab) => set({ pinned: id, view: 'overview', ...(tab ? { zoneTab: tab } : {}) }),
 
-  init: async () => {
-    const { mode, data } = await loadAll()
+  init: async (fieldId) => {
+    unsubscribe?.(); unsubscribe = null
+    set({ ready: false, pinned: null, hovered: null, liveZone: null, modalCapture: null, doneActions: {}, sseOk: false })
+    const { mode, data } = await loadAll(fieldId)
     const d = derive(data.zones, data.captures, get().weather)
-    set({ ready: true, mode, field: data.field, baseZones: data.zones, captures: data.captures, machine: data.machine, replayT: data.machine.duration_s * 0.55, ...d, lastSync: Date.now() })
+    set((s) => ({ ready: true, loadedFieldId: data.field.id, mode, field: data.field, baseZones: data.zones, captures: data.captures, machine: data.machine, replayT: data.machine.duration_s * 0.55, playing: true,
+      ndvi: null, layer: s.layer === 'ndvi' ? 'health' : s.layer, ...d, lastSync: Date.now() }))
     if (mode === 'live') {
-      subscribe(
+      unsubscribe = subscribe(
         (c) => get().addCapture(c),
         (c) => set((s) => { const captures = s.captures.map((x) => (x.id === c.id ? { ...x, review: c.review } : x)); return { captures, ...derive(s.baseZones, captures, s.weather) } }),
         (ok) => set({ sseOk: ok }),
@@ -85,7 +91,7 @@ export const useStore = create<State>((set, get) => ({
     // Optional real-data files; each one is independent and may be absent.
     loadDataFile<Weather>('weather.json').then((w) => { if (w?.daily?.length) { const weatherNow = { ...w, provenance: 'public-weather' as const }; set({ weatherNow }); if (get().scenario === 'now') get().setScenario('now') } })
     loadDataFile<Weather>('weather_scenario_heat.json').then((w) => { if (w?.daily?.length) set({ weatherHeat: { ...w, provenance: 'public-weather' as const } }) })
-    loadDataFile<NdviData>('ndvi_zones.json').then((n) => { if (n?.latest?.zones && n.status !== 'failed') set({ ndvi: n }) })
+    if (data.field.id === BACKEND_FIELD) loadDataFile<NdviData>('ndvi_zones.json').then((n) => { if (n?.latest?.zones && n.status !== 'failed' && get().loadedFieldId === BACKEND_FIELD) set({ ndvi: n }) })
     const ev = (key: keyof State['evals'], file: string) => loadDataFile<any>(file).then((v) => { if (v) set((s) => ({ evals: { ...s.evals, [key]: v } })) })
     ev('forecast', 'forecast_eval.json'); ev('outcome', 'outcome_eval.json'); ev('droughtImage', 'drought_image_eval.json'); ev('soilForecast', 'soil_forecast.json'); ev('soilHistory', 'soil_history.json')
   },
@@ -101,7 +107,7 @@ export const useStore = create<State>((set, get) => ({
     return { captures, liveZone: c.zone_id, playing: false, lastSync: Date.now(), ...derive(s.baseZones, captures, s.weather) }
   }),
   upload: async (input) => {
-    const c = await postCapture(get().mode, input)
+    const c = await postCapture(get().mode, { ...input, fieldId: get().field?.id })
     get().addCapture(c)
     return c
   },

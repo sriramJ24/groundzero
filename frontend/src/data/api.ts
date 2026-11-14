@@ -1,11 +1,20 @@
 // Two adapters, one schema. "live" talks to the FastAPI backend; "demo" runs fully in the browser
 // from the bundled simulated dataset (used for the hosted demo and when the backend is not running).
-import demoJson from './demo/field.json'
+import demoA from './demo/field.json'
+import demoB from './demo/field-B.json'
+import demoC from './demo/field-C.json'
 import { BASE } from '../config'
 import type { Capture, DemoData, Label, ReviewStatus } from './types'
 
 export type Mode = 'live' | 'demo'
-const demo = demoJson as unknown as DemoData
+/** Demo fixtures, one per field. Field A is also what the backend seeds from; B and C exist only as fixtures. */
+export const FIXTURES: Record<string, DemoData> = {
+  'field-A': demoA as unknown as DemoData,
+  'field-B': demoB as unknown as DemoData,
+  'field-C': demoC as unknown as DemoData,
+}
+export const BACKEND_FIELD = 'field-A'
+export const FIELD_LIST = Object.values(FIXTURES).map((d) => d.field)
 
 async function tryJson<T>(url: string, ms = 1500): Promise<T | null> {
   try {
@@ -27,17 +36,21 @@ const normalise = (c: Capture, seededMax: number): Capture => ({
   live: !(c.t != null && c.t <= seededMax && c.provenance === 'simulated' && c.device_id === 'fieldos-sim-01'),
 })
 
-export async function loadAll(): Promise<{ mode: Mode; data: DemoData }> {
+export async function loadAll(fieldId: string = BACKEND_FIELD): Promise<{ mode: Mode; data: DemoData }> {
+  const demo = FIXTURES[fieldId] ?? FIXTURES[BACKEND_FIELD]
   const seededMax = demo.machine.duration_s
-  const live = await tryJson<DemoData>('/api/demo')
-  if (live?.zones?.length) {
-    // Zone baselines always come from the bundled demo file (same file the backend seeds from); the backend supplies captures.
-    return { mode: 'live', data: { ...demo, captures: live.captures.map((c) => normalise(c, seededMax)) } }
+  if (demo.field.id === BACKEND_FIELD) {
+    const live = await tryJson<DemoData>('/api/demo')
+    if (live?.zones?.length) {
+      // Zone baselines always come from the bundled demo file (same file the backend seeds from); the backend supplies captures.
+      return { mode: 'live', data: { ...demo, captures: live.captures.map((c) => normalise(c, seededMax)) } }
+    }
   }
+  // Fields without a backend record run from their own fixture in the browser.
   return { mode: 'demo', data: { ...demo, captures: demo.captures.map((c) => normalise({ ...c, image_url: `${BASE}demo/images/${c.image_file}` }, seededMax)) } }
 }
 
-export interface UploadInput { file: Blob; zoneId: string; label: Label; confidence: number; deviceId?: string; inferenceMs?: number }
+export interface UploadInput { file: Blob; zoneId: string; fieldId?: string; label: Label; confidence: number; deviceId?: string; inferenceMs?: number }
 
 export async function postCapture(mode: Mode, input: UploadInput): Promise<Capture> {
   const jpeg = await toJpeg(input.file)
@@ -61,7 +74,7 @@ export async function postCapture(mode: Mode, input: UploadInput): Promise<Captu
   }
   const dims = await imageDims(jpeg)
   return {
-    id: `capture_local_${Date.now()}`, device_id: input.deviceId ?? 'fieldos-simulator', field_id: 'field-A', zone_id: input.zoneId, reported_zone_id: input.zoneId,
+    id: `capture_local_${Date.now()}`, device_id: input.deviceId ?? 'fieldos-simulator', field_id: input.fieldId ?? BACKEND_FIELD, zone_id: input.zoneId, reported_zone_id: input.zoneId,
     captured_at: new Date().toISOString(), received_at: new Date().toISOString(), capture_uptime_ms: Math.round(performance.now()), position: null,
     image_url: URL.createObjectURL(jpeg), image: { ...dims, bytes: jpeg.size },
     edge_prediction: { label: input.label, confidence: input.confidence, model_version: 'manual-simulator', label_known: true },

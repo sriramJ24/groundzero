@@ -15,9 +15,10 @@ if [ ! -d frontend/dist ] || [ "${REBUILD:-0}" = "1" ]; then
   (cd frontend && npm install --no-audit --no-fund && npm run build)
 fi
 
+PORT="${PORT:-8000}"
 IP=$(ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}' || echo "<LAPTOP_LAN_IP>")
 echo
-echo "  Dashboard:        http://localhost:8000"
-echo "  Camera endpoint:  POST http://${IP}:8000/api/captures   (same Wi-Fi as the ESP32)"
+echo "  Dashboard:        http://localhost:${PORT}"
+echo "  Camera endpoint:  POST http://${IP}:${PORT}/api/captures   (same Wi-Fi as the ESP32)"
 echo
-exec backend/.venv/bin/uvicorn app:app --app-dir backend --host 0.0.0.0 --port 8000
+exec backend/.venv/bin/uvicorn app:app --app-dir backend --host 0.0.0.0 --port "$PORT"

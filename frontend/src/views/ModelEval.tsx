@@ -117,7 +117,7 @@ export default function ModelEval() {
         {!oc ? <Pending name="Crop outcome evaluation" /> : statusBad(oc) ? <Pending name="Crop outcome evaluation" status={String(oc.status)} /> : (
           <>
             <p className="text-[12px] text-mist-400">Dataset: {oc.dataset?.name} ({f(oc.dataset?.n_plants, 6)} plants, {f(oc.dataset?.n_genotypes, 6)} genotypes). Licence: {oc.dataset?.license ?? 'not stated'}. DOI: <span className="num">{oc.dataset?.doi ?? 'not stated'}</span></p>
-            {oc.design && <p className="text-[12px] text-mist-300 mt-1">Design: {typeof oc.design === 'string' ? oc.design : JSON.stringify(oc.design)}</p>}
+            {oc.design && <p className="text-[12px] text-mist-300 mt-1">Design: {typeof oc.design === 'string' ? oc.design : [oc.design.experiments, oc.design.day_axis, oc.design.feature_windows, oc.design.split ?? oc.design.validation].filter((x) => typeof x === 'string').join('. ')}</p>}
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-[12px]">
                 <thead><tr className="text-left text-mist-400"><th className="py-1">Target</th><th>Model</th><th>R2</th><th>MAE</th><th>MAE %</th></tr></thead>

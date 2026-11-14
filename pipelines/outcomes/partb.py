@@ -8,7 +8,7 @@ D='cache/ipk/'
 def load(rep,meta,trt):
     d=pd.read_csv(D+rep,sep=';',low_memory=False,encoding='latin1',decimal=',')
     d=d[d['Row Type']=='combined'].copy()
-    m=pd.read_csv(D+meta,sep=';',encoding='latin1').drop_duplicates('Carrier_ID')[['Carrier_ID','Genotypes']]
+    m=pd.read_csv(D+meta,sep=None,engine='python',encoding='latin1').drop_duplicates('Carrier_ID')[['Carrier_ID','Genotypes']]
     d=d.merge(m,left_on='Plant ID',right_on='Carrier_ID',how='left'); d['trt']=trt
     return d
 dc=load('control_report.csv','Metadata_Control.csv',0); ds=load('stress_report.csv','Metadata_Stress.csv',1)

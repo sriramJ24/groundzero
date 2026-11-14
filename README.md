@@ -73,7 +73,16 @@ Units are m³/m³. Without future weather the model does not beat simply assumin
 
 **Camera drought detection on the Zenodo maize dataset: not validated.** We downloaded one trial (2,405 images) but the frames did not match the documented four-plants-side-by-side layout, so plants could not be labelled reliably. No accuracy is claimed.
 
-**Crop outcome prediction (IPK maize drought + heat phenotyping):** see the Model Evidence view for the current status and numbers.
+**Crop outcome prediction** (IPK maize drought + heat phenotyping, 765 plants, 125 genotypes, whole genotypes held out in 5 folds; predicting from measurements up to the first days of stress):
+
+| Target | Model R² (MAE % of mean) | Treatment-group mean | Last value carried forward |
+|---|---|---|---|
+| Biovolume at end of stress (day 21) | 0.83 (23.1%) | 0.39 (45.0%) | −0.63 (87.9%) |
+| Biovolume after recovery (day 35) | 0.78 (26.2%) | 0.47 (39.6%) | −1.50 (98.2%) |
+| Relative loss vs control, day 21 | −0.37 (15.2%) | −0.01 (13.1%) | −3.38 (30.6%) |
+| Relative loss vs control, day 35 | −0.26 (19.4%) | −0.01 (16.4%) | −1.99 (30.0%) |
+
+The model predicts how big a plant will be well ahead of time, mostly from its early size and its treatment. It does **not** predict how much a given genotype loses to stress: there it is worse than guessing the average. Control and stress were separate experiments and the stress plants were already 59% smaller before stress began, so the raw 76.6% reduction at day 21 overstates the effect (about 43% after adjusting for that gap). These are greenhouse pots, not a field, and not this farm.
 
 **Not measured at all:** accuracy of the on-device model (not trained yet), pesticide efficacy, forecast skill against in-field probes, anything on a real farm.
 

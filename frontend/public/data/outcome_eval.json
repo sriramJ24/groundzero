@@ -1,0 +1,292 @@
+{
+  "dataset": {
+    "name": "High-throughput shoot phenotyping of maize under combined drought and heat stress (IPK e!DAL, files 2228AL_Stress_report.csv + 2237RS_Control_report.csv + Metadata_*.csv)",
+    "doi": "10.5447/ipk/2025/8",
+    "license": "CC BY 4.0",
+    "citation": "Shi, R. (2025): High-throughput shoot phenotyping of maize under combined drought and heat stress. e!DAL - Plant Genomics & Phenomics Research Data Repository, IPK Gatersleben. https://doi.org/10.5447/ipk/2025/8",
+    "n_plants": 765,
+    "n_genotypes": 125
+  },
+  "design": {
+    "experiments": "control (2237RS, 25/20C, 70% FC) vs combined drought+heat (2228AL, 35/25C, 30% FC); separate runs",
+    "day_axis": "IAP Day [Int] (days in the imaging system); assumed stress days 8-21 and recovery days 22-35 per dataset description (stress one week after transplant, 2 weeks, then 2 weeks recovery)",
+    "features": [
+      "trt",
+      "bv_pre",
+      "bv_early",
+      "area_pre",
+      "area_early",
+      "height_pre",
+      "height_early",
+      "g_mean_pre",
+      "g_mean_early",
+      "r_mean_pre",
+      "r_mean_early",
+      "b_mean_pre",
+      "b_mean_early",
+      "lab_a_pre",
+      "lab_a_early",
+      "bv_lograte",
+      "area_lograte",
+      "height_lograte"
+    ],
+    "feature_windows": "pre-stress = last image on days <=7; early stress = last image on days 8-10 (days 8 and 10 are imaged); treatment flag",
+    "biovolume": "volume iap, zoom-corrected, visible-light combined view [voxel]",
+    "targets": "BV at day 21 (end of stress), BV at day 35 (end of recovery), and relative loss vs same-genotype control mean",
+    "cv": "GroupKFold(5), group=genotype, default HistGradientBoostingRegressor(random_state=0), no tuning; metrics on pooled out-of-fold predictions",
+    "baselines": "treatment-group mean (train folds); day-10 value carried forward"
+  },
+  "targets": [
+    {
+      "name": "biovolume_end_of_stress_day21",
+      "model": {
+        "r2": 0.829540221625463,
+        "mae": 4138231.991805552,
+        "mae_pct": 23.05213891567311
+      },
+      "baselines": [
+        {
+          "name": "treatment_group_mean",
+          "r2": 0.38802702959596325,
+          "mae": 8082246.310224669,
+          "mae_pct": 45.022382762232525
+        },
+        {
+          "name": "last_observed_carried_forward_day10",
+          "r2": -0.633102060913252,
+          "mae": 15771519.529065466,
+          "mae_pct": 87.85569775092294
+        }
+      ],
+      "n_plants": 765,
+      "n_genotypes": 125,
+      "target_mean": 17951618.315955818
+    },
+    {
+      "name": "biovolume_end_of_recovery_day35",
+      "model": {
+        "r2": 0.7836660062399536,
+        "mae": 31125126.391697474,
+        "mae_pct": 26.215430474555795
+      },
+      "baselines": [
+        {
+          "name": "treatment_group_mean",
+          "r2": 0.469514332544574,
+          "mae": 47031542.92476222,
+          "mae_pct": 39.61275941947907
+        },
+        {
+          "name": "last_observed_carried_forward_day10",
+          "r2": -1.5030338005483936,
+          "mae": 116548168.60473973,
+          "mae_pct": 98.1637912901574
+        }
+      ],
+      "n_plants": 765,
+      "n_genotypes": 125,
+      "target_mean": 118728267.39163004
+    },
+    {
+      "name": "relative_growth_loss_vs_genotype_control_end_of_stress_day21",
+      "model": {
+        "r2": -0.3739842859913143,
+        "mae": 0.11150553239694547,
+        "mae_pct": 15.231970825177996
+      },
+      "baselines": [
+        {
+          "name": "stress_group_mean",
+          "r2": -0.008946008029909303,
+          "mae": 0.09553258069372861,
+          "mae_pct": 13.05002048508849
+        },
+        {
+          "name": "last_observed_loss_carried_forward_day10",
+          "r2": -3.379854916883354,
+          "mae": 0.2237848612722542,
+          "mae_pct": 30.569644435946003
+        }
+      ],
+      "n_plants": 379,
+      "n_genotypes": 122,
+      "target_mean": 0.7320492776458719,
+      "note": "stress plants only; loss = 1 - BV/mean BV of same genotype in the control experiment at the same day"
+    },
+    {
+      "name": "relative_growth_loss_vs_genotype_control_end_of_recovery_day35",
+      "model": {
+        "r2": -0.2617841382792039,
+        "mae": 0.132000222327533,
+        "mae_pct": 19.363021510011333
+      },
+      "baselines": [
+        {
+          "name": "stress_group_mean",
+          "r2": -0.006763277383021515,
+          "mae": 0.11173481542062323,
+          "mae_pct": 16.390302957507966
+        },
+        {
+          "name": "last_observed_loss_carried_forward_day10",
+          "r2": -1.9917003956255428,
+          "mae": 0.20434624960988745,
+          "mae_pct": 29.975410320661883
+        }
+      ],
+      "n_plants": 379,
+      "n_genotypes": 122,
+      "target_mean": 0.6817129354490695,
+      "note": "stress plants only; loss = 1 - BV/mean BV of same genotype in the control experiment at the same day"
+    }
+  ],
+  "top_features": [
+    {
+      "feature": "trt",
+      "permutation_importance_mae_increase_mean_over_targets": 9016808.140573032
+    },
+    {
+      "feature": "bv_early",
+      "permutation_importance_mae_increase_mean_over_targets": 8914331.62513395
+    },
+    {
+      "feature": "area_early",
+      "permutation_importance_mae_increase_mean_over_targets": 773914.8159191173
+    },
+    {
+      "feature": "bv_lograte",
+      "permutation_importance_mae_increase_mean_over_targets": 366055.18938822835
+    },
+    {
+      "feature": "height_pre",
+      "permutation_importance_mae_increase_mean_over_targets": 177057.04183777192
+    },
+    {
+      "feature": "r_mean_early",
+      "permutation_importance_mae_increase_mean_over_targets": 175142.9414881876
+    },
+    {
+      "feature": "b_mean_pre",
+      "permutation_importance_mae_increase_mean_over_targets": 151376.85166248228
+    },
+    {
+      "feature": "area_lograte",
+      "permutation_importance_mae_increase_mean_over_targets": 116357.55100373621
+    },
+    {
+      "feature": "height_early",
+      "permutation_importance_mae_increase_mean_over_targets": 85151.94667379829
+    },
+    {
+      "feature": "g_mean_early",
+      "permutation_importance_mae_increase_mean_over_targets": 63694.17312090311
+    }
+  ],
+  "treatment_effect": {
+    "day": 21,
+    "control_mean": 29206644.968959212,
+    "stress_mean": 6842760.8402641555,
+    "pct_reduction": 76.57121916078813,
+    "at_day_recovery_end": {
+      "day": 35,
+      "control_mean": 184275923.47503683,
+      "stress_mean": 54031879.56904675,
+      "pct_reduction": 70.67881763926351
+    },
+    "at_pre_stress_day6": {
+      "day": 6,
+      "control_mean": 989418.828530079,
+      "stress_mean": 407913.81864706497,
+      "pct_reduction": 58.77238163608849
+    },
+    "confound_note": "Control and stress are separate experiments (different dates); stress plants were already smaller before stress began, so the raw difference overstates the stress effect.",
+    "ratio_stress_over_control_day6": 0.4122761836391151,
+    "ratio_stress_over_control_day21": 0.23428780839211877,
+    "ratio_adjusted_pct_reduction_day21": 43.17212158022643
+  },
+  "growth_curves": {
+    "days": [
+      5,
+      6,
+      8,
+      10,
+      11,
+      13,
+      14,
+      15,
+      17,
+      20,
+      21,
+      22,
+      24,
+      25,
+      27,
+      28,
+      29,
+      31,
+      32,
+      34,
+      35,
+      36
+    ],
+    "control_mean": [
+      794479.1760630001,
+      989418.828530079,
+      1698830.3509583946,
+      3053593.499669263,
+      4021077.2652605264,
+      6474074.2214834215,
+      8046352.505402106,
+      9417568.035701843,
+      13859050.261390526,
+      24203524.382847898,
+      29206644.968959212,
+      34444635.206997894,
+      43582938.020339474,
+      51111546.50622421,
+      65470388.421223156,
+      73209878.34657027,
+      81086874.04007421,
+      117705866.3856471,
+      139860380.79675922,
+      168638722.21996316,
+      184275923.47503683,
+      195688238.41999736
+    ],
+    "stress_mean": [
+      326647.5046514805,
+      407913.81864706497,
+      700036.5821986494,
+      1317948.1612903897,
+      1804711.2877189612,
+      3392862.480372467,
+      3692899.2524553845,
+      5136948.621471688,
+      6226753.307467268,
+      6779159.364610909,
+      6842760.8402641555,
+      7152505.366991948,
+      7515231.193074546,
+      9481050.257946428,
+      12555458.026322078,
+      14593510.172083117,
+      17341714.229602598,
+      25080878.272867534,
+      29765248.214314286,
+      40876835.33104675,
+      54031879.56904675,
+      74102296.99171168
+    ],
+    "unit": "biovolume, voxel (zoom-corrected)"
+  },
+  "limitations": [
+    "Greenhouse pots with automated imaging platform, not a field; single hybrid-free inbred-line panel; not this farm and not a farm-calibrated model.",
+    "Control and stress were separate experiments; stress plants were already ~60% smaller at day 6, so treatment effects and relative loss vs control are confounded with experiment/run differences.",
+    "Day alignment (stress start day 8) is assumed from the dataset description, not read from a conditions file.",
+    "Input features come from imaging-platform traits (side/top views, fluorescence-derived), not from a farm camera; the model is for ranking relative stress response, not calibrated yield prediction.",
+    "Genotype count includes all genotypes present in the metadata (may include reference/blank entries beyond the 106 lines).",
+    "Held-out whole genotypes, but with n~380 plants per arm and default hyperparameters; reported metrics are single-run, untuned."
+  ],
+  "status": "ok",
+  "generated_at": "2026-11-14T21:50:49.986239+00:00"
+}

@@ -54,15 +54,15 @@ export function computeRisk(zone: Zone, w: Weather): Risk {
   const s = summarise(w)
   const wxSource = w.provenance ?? 'public-weather'
   const visual = clamp((100 - zone.health.score) / 100)
-  // crude water balance for the coming week: demand (ET0) minus rain minus half of last week's irrigation carry-over
-  const deficitMm = s.et0_7 - s.rain7 - 0.5 * zone.water.applied_mm_7d
-  const deficit = clamp((deficitMm + 10) / 35)
+  // crude water balance for the coming week: demand (ET0) minus forecast rain minus last week's logged irrigation
+  const deficitMm = s.et0_7 - s.rain7 - zone.water.applied_mm_7d
+  const deficit = clamp((deficitMm + 5) / 45)
   const holding = 1 - zone.water_holding
   const heatIdx = clamp((s.tmax3 - 28) / 12)
 
   const f: Factor[] = []
   const dPts = { deficit: 45 * deficit, soil: 20 * holding, visual: 25 * visual, exposure: 10 * zone.exposure }
-  f.push({ name: 'Water balance, next 7 days', points: dPts.deficit, source: wxSource, detail: `ET₀ ${s.et0_7.toFixed(0)} mm − rain ${s.rain7.toFixed(0)} mm − carry-over of ${zone.water.applied_mm_7d.toFixed(0)} mm applied last week → ${deficitMm.toFixed(0)} mm shortfall` })
+  f.push({ name: 'Water balance, next 7 days', points: dPts.deficit, source: wxSource, detail: `ET₀ ${s.et0_7.toFixed(0)} mm − rain ${s.rain7.toFixed(0)} mm − ${zone.water.applied_mm_7d.toFixed(0)} mm irrigation logged last week → ${deficitMm > 0 ? `${deficitMm.toFixed(0)} mm shortfall` : 'no shortfall'}` })
   f.push({ name: 'Soil water-holding', points: dPts.soil, source: 'simulated', detail: `${zone.soil}; holding index ${zone.water_holding.toFixed(2)}` })
   f.push({ name: 'Visible stress in images', points: dPts.visual, source: zone.provenance, detail: `health score ${zone.health.score}/100, last label “${zone.health.last_label}”` })
   f.push({ name: 'Exposure (slope/ridge)', points: dPts.exposure, source: 'simulated', detail: `exposure index ${zone.exposure.toFixed(2)}` })

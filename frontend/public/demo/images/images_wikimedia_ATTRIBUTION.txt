@@ -1,0 +1,35 @@
+wilting_01.jpg
+  Source: https://commons.wikimedia.org/wiki/File:Corn_in_drought,_Western_Kentucky,_August,_2012.jpg
+  Author: CraneStation
+  Licence: CC BY 2.0
+  Licence URL: https://creativecommons.org/licenses/by/2.0
+
+wilting_02.jpg
+  Source: https://commons.wikimedia.org/wiki/File:Corn_shows_the_effect_of_drought.jpg
+  Author: USDA photo by Bob Nichols
+  Licence: Public domain
+  Licence URL: None
+
+wilting_03.jpg
+  Source: https://commons.wikimedia.org/wiki/File:Drought-stressed_corn,_western_Tennessee-Kentucky_border.jpg
+  Author: CraneStation
+  Licence: CC BY 2.0
+  Licence URL: https://creativecommons.org/licenses/by/2.0
+
+wilting_04.jpg
+  Source: https://commons.wikimedia.org/wiki/File:Dry_maize_in_France_(summer_2016).jpg
+  Author: <a href="//commons.wikimedia.org/wiki/User:Tangopaso" title="User:Tangopaso">Tangopaso</a>
+  Licence: Public domain
+  Licence URL: None
+
+wilting_05.jpg
+  Source: https://commons.wikimedia.org/wiki/File:2017_Kennebec,_SD_No_Till_Corn_-_25756969377.jpg
+  Author: USDA NRCS South Dakota
+  Licence: CC BY-SA 2.0
+  Licence URL: https://creativecommons.org/licenses/by-sa/2.0
+
+wilting_06.jpg
+  Source: https://commons.wikimedia.org/wiki/File:2017_Kennebec,_SD_No_Till_Corn_-_25756979827.jpg
+  Author: USDA NRCS South Dakota
+  Licence: CC BY-SA 2.0
+  Licence URL: https://creativecommons.org/licenses/by-sa/2.0

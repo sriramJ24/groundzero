@@ -45,9 +45,9 @@ export default function ZonePanel() {
         )}
       </div>
 
-      <div className="flex gap-0.5 border-b border-ink-700 px-2">
+      <div className="flex border-b border-ink-700 px-1.5">
         {TABS.map((t) => (
-          <button key={t} onClick={() => set({ zoneTab: t })} className={`px-2.5 py-2 text-[12px] font-medium transition-colors ${tab === t ? 'border-b-2 border-leaf-400 text-mist-100' : 'border-b-2 border-transparent text-mist-400 hover:text-mist-200'}`}>
+          <button key={t} onClick={() => set({ zoneTab: t })} className={`px-2 py-2 text-[11.5px] font-medium transition-colors ${tab === t ? 'border-b-2 border-leaf-400 text-mist-100' : 'border-b-2 border-transparent text-mist-400 hover:text-mist-200'}`}>
             {t}{t === 'Images' && zc.length ? <span className="num ml-1 text-[10px] text-mist-400">{zc.length}</span> : null}
           </button>
         ))}

@@ -34,6 +34,7 @@ export function healthFromCaptures(zone: Zone, captures: Capture[]): Zone['healt
   cs.forEach((c) => { mix[c.edge_prediction.label] = (mix[c.edge_prediction.label] ?? 0) + 1 })
   const fromImages = clamp(100 - (pen / wsum) * 1.6, 0, 100)
   const score = Math.round(0.5 * zone.health.score + 0.5 * fromImages)
+  // rejected images are already filtered out above
   return { score, last_label: cs[0].edge_prediction.label, last_confidence: cs[0].edge_prediction.confidence, n_captures: cs.length, label_mix: mix, method: 'indicative rule-based (baseline + recent images)' }
 }
 
@@ -67,7 +68,7 @@ export function computeRisk(zone: Zone, w: Weather): Risk {
   f.push({ name: 'Exposure (slope/ridge)', points: dPts.exposure, source: 'simulated', detail: `exposure index ${zone.exposure.toFixed(2)}` })
   const drought = Math.round(clamp((dPts.deficit + dPts.soil + dPts.visual + dPts.exposure) / 100) * 100)
 
-  const hPts = { heat: 60 * heatIdx, exposure: 25 * zone.exposure * heatIdx, visual: 15 * visual * heatIdx }
+  const hPts = { heat: 40 * heatIdx, exposure: 35 * zone.exposure * heatIdx, visual: 25 * visual * heatIdx }
   f.push({ name: 'Forecast heat, next 72 h', points: hPts.heat, source: wxSource, detail: `max ${s.tmax3.toFixed(1)} °C (index starts at 28 °C)` })
   const heat = Math.round(clamp((hPts.heat + hPts.exposure + hPts.visual) / 100) * 100)
 
@@ -101,7 +102,7 @@ export interface LayerValue { v: number; display: string; missing?: boolean }
 export function layerValue(layer: LayerId, zone: Zone, risk: Risk, ndvi: NdviData | null, maxWater: number): LayerValue {
   switch (layer) {
     case 'health': return { v: zone.health.score / 100, display: `${zone.health.score}` }
-    case 'drought': { const r = Math.max(risk.drought, risk.heat); return { v: r / 100, display: `${r}` } }
+    case 'drought': { const r = Math.round(0.6 * risk.drought + 0.4 * risk.heat); return { v: r / 100, display: `${r}` } }
     case 'water': return { v: clamp(zone.water.applied_mm_7d / maxWater), display: `${zone.water.applied_mm_7d.toFixed(1)}` }
     case 'spray': return { v: zone.spray.coverage_pct / 100, display: `${zone.spray.coverage_pct}%` }
     case 'forecast': return { v: risk.forecast_impact / 100, display: `${risk.forecast_impact}` }
@@ -126,15 +127,18 @@ export const rampCss = (ramp: string[]) => `linear-gradient(90deg, ${ramp.join('
 // ---------- recommendations ----------
 export function buildActions(zones: Zone[], risks: Record<string, Risk>, captures: Capture[]): ActionItem[] {
   const out: ActionItem[] = []
+  const sorted = zones.map((z) => z.water.applied_mm_7d).sort((a, b) => a - b)
+  const medianWater = sorted[Math.floor(sorted.length / 2)] ?? 0
   for (const z of zones) {
     const r = risks[z.id]
     const cs = captures.filter((c) => c.zone_id === z.id)
     const latest = cs.sort((a, b) => (a.received_at < b.received_at ? 1 : -1))[0]
-    if (z.health.last_label === 'wilting' && r.drought >= 55) {
+    const underWatered = z.water.applied_mm_7d < 0.7 * medianWater
+    if (z.health.last_label === 'wilting' && (r.drought >= 50 || underWatered)) {
       out.push({ id: `irr-${z.id}`, zone_id: z.id, priority: 1, kind: 'review_irrigation', score: r.drought + (100 - z.health.score),
         title: `Check irrigation reach in ${z.id} and inspect for water stress`,
-        why: [`Images labelled “wilting” (${cs.length} capture${cs.length === 1 ? '' : 's'}; latest confidence ${latest ? Math.round(latest.edge_prediction.confidence * 100) : '—'}%)`,
-          `Only ${z.water.applied_mm_7d.toFixed(0)} mm logged in the last 7 days`, `Drought risk ${r.drought}/100 from the forecast water balance`,
+        why: [latest ? `Images labelled “wilting” (${cs.length} capture${cs.length === 1 ? '' : 's'}; latest confidence ${Math.round(latest.edge_prediction.confidence * 100)}%)` : 'Simulated baseline marks this zone as wilting; no camera image yet, so scan it first',
+          `${z.water.applied_mm_7d.toFixed(0)} mm logged in the last 7 days against a field median of ${medianWater.toFixed(0)} mm`, `Drought risk ${r.drought}/100 from the forecast water balance`,
           'No soil moisture probe in this zone, so confirm on the ground before changing the schedule'] })
     } else if (z.health.last_label === 'discoloration' && z.health.score < 70) {
       out.push({ id: `scout-${z.id}`, zone_id: z.id, priority: z.health.score < 45 ? 1 : 2, kind: 'scout', score: 60 + (100 - z.health.score),

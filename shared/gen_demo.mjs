@@ -33,7 +33,7 @@ for (let r = 0; r < ROWS; r++) {
     const waterHolding = clamp(0.75 - 0.45 * elevation + 0.1 * (rnd() - 0.5)) // sandy on the ridge
     const exposure = clamp(0.3 + 0.6 * elevation + 0.1 * (rnd() - 0.5))
 
-    const stress = clamp(0.75 * dry + 0.65 * disease + 0.08 * rnd())
+    const stress = clamp(1.25 * dry + 0.95 * disease + 0.07 * rnd())
     const score = Math.round(clamp(1 - stress, 0.12, 0.98) * 100)
 
     // Irrigation log (simulated machine records)
@@ -51,7 +51,7 @@ for (let r = 0; r < ROWS; r++) {
     if (disease > 0.35) sprayEvents.push({ at: iso(3 * DAY), product_class: 'Fungicide (demo record)', rate_l_ha: 150, coverage_pct: Math.round(clamp(0.7 + 0.25 * rnd()) * 100) })
     const coverage = sprayEvents.length ? Math.max(...sprayEvents.map((e) => e.coverage_pct)) : 0
 
-    const last_label = dry > 0.45 ? 'wilting' : disease > 0.3 ? 'discoloration' : 'healthy'
+    const last_label = dry > 0.3 ? 'wilting' : disease > 0.25 ? 'discoloration' : 'healthy'
     zones.push({
       id, row: r, col: c,
       elevation: round(elevation, 3),

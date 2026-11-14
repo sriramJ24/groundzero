@@ -1,7 +1,7 @@
 // Stylised 3D digital twin of the field. This is an illustration built from zone data,
 // not a photogrammetric reconstruction.
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber'
-import { Html, OrbitControls } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useStore } from '../store'
@@ -30,7 +30,8 @@ function useTargets() {
       const lv = layerValue(layer, z, risks[z.id], ndvi, maxWater)
       const color = lv.missing ? ([0.16, 0.2, 0.23] as [number, number, number]) : rampColor(def.ramp, lv.v)
       const terrain = z.elevation * 0.55
-      const height = 0.22 + terrain + (extrude ? lv.v * 1.15 : 0)
+      const lift = layer === 'health' ? 1 - lv.v : lv.v // on the health layer, stressed zones rise so they stand out
+      const height = 0.22 + terrain + (extrude && !lv.missing ? lift * 1.25 : 0)
       return { color, height, v: lv.v }
     })
   }, [zones, risks, layer, ndvi, extrude])
@@ -91,6 +92,7 @@ function Zones() {
       }
     }
     tiles.current.instanceMatrix.needsUpdate = true
+    tiles.current.computeBoundingSphere() // instanced raycasting uses this; it must follow the animated tiles
     if (tiles.current.instanceColor) tiles.current.instanceColor.needsUpdate = true
     plants.current.instanceMatrix.needsUpdate = true
     if (plants.current.instanceColor) plants.current.instanceColor.needsUpdate = true
@@ -122,7 +124,7 @@ function Zones() {
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial roughness={0.78} metalness={0.05} />
       </instancedMesh>
-      <instancedMesh ref={plants} args={[undefined, undefined, zones.length * PLANTS * PLANTS]} raycast={() => null} castShadow>
+      <instancedMesh ref={plants} args={[undefined, undefined, zones.length * PLANTS * PLANTS]} raycast={() => null} castShadow frustumCulled={false}>
         <coneGeometry args={[0.07, 0.24, 5]} />
         <meshStandardMaterial roughness={0.9} />
       </instancedMesh>
@@ -182,7 +184,7 @@ function Machine() {
     boomL.current.scale.x = 1
 
     // scan trail: thin plates on every zone already passed
-    const passed = s.liveZone ? machine.path.length : i0 + 1
+    const passed = i0 + 1
     for (let i = 0; i < machine.path.length; i++) {
       const zi = idx[machine.path[i].zone_id], zn = zones[zi]
       const on = i < passed
@@ -197,7 +199,7 @@ function Machine() {
 
   return (
     <>
-      <instancedMesh ref={trail} args={[undefined, undefined, machine.path.length]} raycast={() => null}>
+      <instancedMesh ref={trail} args={[undefined, undefined, machine.path.length]} raycast={() => null} frustumCulled={false}>
         <circleGeometry args={[0.5, 4]} />
         <meshBasicMaterial color="#e8eef1" transparent opacity={0.42} depthWrite={false} />
       </instancedMesh>
@@ -258,19 +260,33 @@ function Pins() {
   )
 }
 
+function makeLabel(text: string, color: string, bg = false) {
+  const c = document.createElement('canvas'); c.width = bg ? 256 : 96; c.height = 96
+  const ctx = c.getContext('2d')!
+  if (bg) { ctx.fillStyle = 'rgba(11,17,22,0.94)'; ctx.strokeStyle = '#3a4f5c'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(4, 14, 248, 68, 14); ctx.fill(); ctx.stroke() }
+  ctx.fillStyle = color; ctx.font = `600 ${bg ? 40 : 44}px ui-sans-serif, system-ui, -apple-system, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+  ctx.fillText(text, c.width / 2, 50)
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+function Label({ text, position, color = '#7f95a1', scale = 0.42, bg = false }: { text: string; position: [number, number, number]; color?: string; scale?: number; bg?: boolean }) {
+  const tex = useMemo(() => makeLabel(text, color, bg), [text, color, bg])
+  useEffect(() => () => tex.dispose(), [tex])
+  return (
+    <sprite position={position} scale={[bg ? scale * 2.667 : scale, scale, 1]} raycast={() => null} renderOrder={10}>
+      <spriteMaterial map={tex} transparent depthTest={!bg} depthWrite={false} />
+    </sprite>
+  )
+}
+
 function AxisLabels() {
   const field = useStore((s) => s.field)!
   const half = (field.cols * CELL) / 2
-  const cls = 'pointer-events-none select-none text-[10px] font-semibold tracking-wider text-mist-400'
   return (
     <>
-      {[...Array(field.cols)].map((_, c) => (
-        <Html key={`c${c}`} position={[(c - (field.cols - 1) / 2) * CELL, 0, -half - 0.45]} center zIndexRange={[5, 0]}><span className={cls}>{LETTERS[c]}</span></Html>
-      ))}
-      {[...Array(field.rows)].map((_, r) => (
-        <Html key={`r${r}`} position={[-half - 0.45, 0, (r - (field.rows - 1) / 2) * CELL]} center zIndexRange={[5, 0]}><span className={cls}>{r + 1}</span></Html>
-      ))}
-      <Html position={[0, 0, -half - 1.15]} center zIndexRange={[5, 0]}><span className="pointer-events-none select-none text-[10px] font-bold tracking-[0.2em] text-leaf-400">N ↑</span></Html>
+      {[...Array(field.cols)].map((_, c) => <Label key={`c${c}`} text={LETTERS[c]} position={[(c - (field.cols - 1) / 2) * CELL, 0.1, -half - 0.45]} />)}
+      {[...Array(field.rows)].map((_, r) => <Label key={`r${r}`} text={String(r + 1)} position={[-half - 0.45, 0.1, (r - (field.rows - 1) / 2) * CELL]} />)}
+      <Label text="N" color="#63d394" scale={0.6} position={[0, 0.1, -half - 1.2]} />
     </>
   )
 }
@@ -280,11 +296,7 @@ function HoverTip() {
   const zone = useStore((s) => (s.hovered ? s.zoneById[s.hovered] : null))
   const field = useStore((s) => s.field)!
   if (!hovered || !zone) return null
-  return (
-    <Html position={[zx(zone, field.cols), 2.6, zz(zone, field.rows)]} center zIndexRange={[20, 10]}>
-      <div className="pointer-events-none whitespace-nowrap rounded-md border border-ink-600 bg-ink-900/95 px-2 py-1 text-[11px] font-semibold text-mist-100 shadow-lg">Zone {hovered}</div>
-    </Html>
-  )
+  return <Label bg text={`Zone ${hovered}`} color="#e8eef1" scale={0.5} position={[zx(zone, field.cols), 2.7, zz(zone, field.rows)]} />
 }
 
 export default function FieldScene() {

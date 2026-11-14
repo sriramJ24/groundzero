@@ -31,7 +31,8 @@ export async function loadAll(): Promise<{ mode: Mode; data: DemoData }> {
   const seededMax = demo.machine.duration_s
   const live = await tryJson<DemoData>('/api/demo')
   if (live?.zones?.length) {
-    return { mode: 'live', data: { ...live, captures: live.captures.map((c) => normalise(c, seededMax)) } }
+    // Zone baselines always come from the bundled demo file (same file the backend seeds from); the backend supplies captures.
+    return { mode: 'live', data: { ...demo, captures: live.captures.map((c) => normalise(c, seededMax)) } }
   }
   return { mode: 'demo', data: { ...demo, captures: demo.captures.map((c) => normalise({ ...c, image_url: `${BASE}demo/images/${c.image_file}` }, seededMax)) } }
 }

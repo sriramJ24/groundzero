@@ -34,11 +34,11 @@ function KpiBar() {
   const done = useStore((s) => s.doneActions)
   const field = useStore((s) => s.field)!
   const machine = useStore((s) => s.machine)!
-  const scannedSteps = useStore((s) => (s.liveZone ? machine.path.length : Math.min(machine.path.length, Math.floor(s.replayT / machine.step_s) + 1)))
+  const scannedSteps = useStore((s) => Math.min(machine.path.length, Math.floor(s.replayT / machine.step_s) + 1))
   const set = useStore((s) => s.set)
   const k = useMemo(() => {
     const health = Math.round(zones.reduce((a, z) => a + z.health.score, 0) / zones.length)
-    const atRisk = zones.filter((z) => z.health.score < 50 || Math.max(risks[z.id].drought, risks[z.id].heat) >= 65).length
+    const atRisk = zones.filter((z) => z.health.score < 50 || 0.6 * risks[z.id].drought + 0.4 * risks[z.id].heat >= 65).length
     const waterM3 = zones.reduce((a, z) => a + z.water.applied_mm_7d * 0.9, 0)
     const covered = zones.filter((z) => z.spray.coverage_pct > 0).length
     return { health, atRisk, waterM3, covered }
@@ -71,6 +71,9 @@ function LayerBar() {
   const extrude = useStore((s) => s.extrude)
   const ndvi = useStore((s) => s.ndvi)
   const set = useStore((s) => s.set)
+  const scenario = useStore((s) => s.scenario)
+  const weatherHeat = useStore((s) => s.weatherHeat)
+  const setScenario = useStore((s) => s.setScenario)
   return (
     <div className="pointer-events-none absolute left-3 right-3 top-3 flex flex-wrap items-start justify-between gap-2">
       <div className="pointer-events-auto flex flex-wrap gap-1 rounded-lg border border-ink-700 bg-ink-900/90 p-1 backdrop-blur">
@@ -80,7 +83,15 @@ function LayerBar() {
           </button>
         ))}
       </div>
-      <div className="pointer-events-auto flex gap-1 rounded-lg border border-ink-700 bg-ink-900/90 p-1 backdrop-blur">
+      <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-ink-700 bg-ink-900/90 p-1 backdrop-blur">
+        {weatherHeat && (
+          <>
+            <span className="label px-1.5">Weather</span>
+            <button onClick={() => setScenario('now')} className={`rounded-md px-2.5 py-1.5 text-[12px] font-medium ${scenario === 'now' ? 'bg-ink-700 text-mist-100' : 'text-mist-400 hover:text-mist-100'}`}>This week</button>
+            <button onClick={() => setScenario('heat')} title="Replays the real hottest week of summer 2026 at this location" className={`rounded-md px-2.5 py-1.5 text-[12px] font-medium ${scenario === 'heat' ? 'bg-amber-warn/20 text-amber-warn' : 'text-mist-400 hover:text-mist-100'}`}>Aug 2026 heatwave</button>
+            <span className="mx-1 h-5 w-px bg-ink-700" />
+          </>
+        )}
         <button onClick={() => set({ extrude: !extrude })} className={`rounded-md px-2.5 py-1.5 text-[12px] font-medium ${extrude ? 'bg-ink-700 text-mist-100' : 'text-mist-400'}`}>Height = value</button>
         <button onClick={() => useStore.setState((s) => ({ resetTick: s.resetTick + 1 }))} className="rounded-md px-2.5 py-1.5 text-[12px] font-medium text-mist-400 hover:text-mist-100">Reset view</button>
       </div>
@@ -92,6 +103,7 @@ function Legend() {
   const layer = useStore((s) => s.layer)
   const ndvi = useStore((s) => s.ndvi)
   const weather = useStore((s) => s.weather)
+  const scenario = useStore((s) => s.scenario)
   const def = LAYERS.find((l) => l.id === layer)!
   const real = layer === 'ndvi'
   const usesWx = layer === 'drought' || layer === 'forecast'
@@ -106,7 +118,7 @@ function Legend() {
       </div>
       <div className="mt-2 flex flex-wrap gap-1">
         {real ? <span className="chip chip-pub">SENTINEL-2 · REAL</span> : <span className="chip chip-sim">SIMULATED ZONE DATA</span>}
-        {usesWx && <span className={`chip ${weather.provenance === 'simulated' ? 'chip-sim' : 'chip-pub'}`}>{weather.provenance === 'simulated' ? 'SAMPLE FORECAST' : 'OPEN-METEO FORECAST'}</span>}
+        {usesWx && <span className={`chip ${weather.provenance === 'simulated' ? 'chip-sim' : 'chip-pub'}`}>{weather.provenance === 'simulated' ? 'SAMPLE FORECAST' : scenario === 'heat' ? 'REAL ARCHIVE · AUG 1–7 2026 REPLAY' : 'OPEN-METEO FORECAST · THIS WEEK'}</span>}
       </div>
     </div>
   )

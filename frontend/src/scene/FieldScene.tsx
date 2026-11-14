@@ -190,7 +190,7 @@ function Machine() {
       const on = i < passed
       dummy.position.set(zx(zn, field.cols), (heightsRef.current[zi] ?? 0.4) + 0.006, zz(zn, field.rows))
       dummy.scale.set(on ? CELL - GAP - 0.5 : 0.0001, 1, on ? CELL - GAP - 0.5 : 0.0001)
-      dummy.rotation.set(-Math.PI / 2, 0, 0)
+      dummy.rotation.set(-Math.PI / 2, 0, Math.PI / 4)
       dummy.updateMatrix()
       trail.current.setMatrixAt(i, dummy.matrix)
     }
@@ -284,9 +284,9 @@ function AxisLabels() {
   const half = (field.cols * CELL) / 2
   return (
     <>
-      {[...Array(field.cols)].map((_, c) => <Label key={`c${c}`} text={LETTERS[c]} position={[(c - (field.cols - 1) / 2) * CELL, 0.1, -half - 0.45]} />)}
-      {[...Array(field.rows)].map((_, r) => <Label key={`r${r}`} text={String(r + 1)} position={[-half - 0.45, 0.1, (r - (field.rows - 1) / 2) * CELL]} />)}
-      <Label text="N" color="#63d394" scale={0.6} position={[0, 0.1, -half - 1.2]} />
+      {[...Array(field.cols)].map((_, c) => <Label key={`c${c}`} text={LETTERS[c]} position={[(c - (field.cols - 1) / 2) * CELL, 0.15, half + 0.5]} color="#a3b5bf" />)}
+      {[...Array(field.rows)].map((_, r) => <Label key={`r${r}`} text={String(r + 1)} position={[half + 0.5, 0.15, (r - (field.rows - 1) / 2) * CELL]} color="#a3b5bf" />)}
+      <Label bg text="NORTH" color="#63d394" scale={0.42} position={[0, 1.9, -half - 0.9]} />
     </>
   )
 }

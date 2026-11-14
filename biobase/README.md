@@ -1,4 +1,4 @@
-# Biobase challenge: Find the Right Patients (Task A, criteria search)
+# Biobase challenge: Find the Right Patients
 
 A separate, small entry for the Biobase sponsor challenge at DNA Forge (Nov 14, 2026). It is independent of the FIELDOS farm dashboard and uses only Biobase's own synthetic pathology reports. No agricultural data is involved, and nothing here is for medical use.
 
@@ -20,9 +20,24 @@ The final diagnosis block of each report is written by code, so `criteria_search
 
 - This works because the diagnosis block is templated. Free-text reports from real hospitals would need a language model or a much broader parser, and that has not been tested here.
 - One criterion is ambiguous in a way the training data cannot settle: "node-positive colon cancer in patients 70 or older" could mean positive nodes or a pN1c stage with deposits only. No training or test report distinguishes the two readings, so it does not affect this submission.
-- Tasks B and C (slide organ labels, similar slides) were not attempted.
 
-## Run
+## Slide tasks (C1 organ labels, C2 similar slides)
+
+`slides.py` predicts the organ group of the 67 held-out slides and lists the 10 most similar slides for each, using only the provided slide-level embeddings and unlabelled slide metadata (sex, supplier, magnification, scanner).
+
+- **Model:** logistic regression on Prov-GigaPath slide vectors plus metadata. It was chosen by 5-fold cross-validation on the 190 labelled slides, comparing four embedding models, combinations of them, and nearest-neighbour matching.
+- **Measured (labelled slides only):** 5-fold cross-validated organ accuracy **0.850** on 180 slides (organ groups with at least 5 slides). Nearest-neighbour on the same GigaPath vectors gets 0.784 leave-one-out. The chosen configuration was the best of 28 tried, so 0.850 is somewhat optimistic; the nearest alternatives scored 0.79 to 0.84.
+- **Similar slides:** cosine similarity on the embedding, boosted when two slides have the same known or predicted organ. This part has no cross-validated number.
+- **Held-out score: not known when this was written.** Both CSVs were frozen before the 4:00 PM key release. With 67 slides over 15 groups, the organizers themselves call the score a rough signal.
+- Rare groups (Esophagus, Skin, Bone) have very few labelled slides, so predictions there are weak. Two slides have no GigaPath vector and are predicted from metadata alone.
+
+Needs `numpy` and `scikit-learn`, plus the "Slide metadata" and "Slide tiles" packs unzipped into `biobase/data/`.
+
+```bash
+python biobase/slides.py biobase/data
+```
+
+## Run (criteria search)
 
 Download the "Synthetic reports" pack from the challenge page and unzip it into `biobase/data/` (the data is not committed).
 

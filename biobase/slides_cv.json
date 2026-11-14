@@ -1,0 +1,75 @@
+{
+ "chosen": {
+  "embeddings": [
+   "gigapath"
+  ],
+  "metadata": true,
+  "C": 10.0
+ },
+ "cv_accuracy": 0.85,
+ "cv_n": 180,
+ "cv_folds": 5,
+ "top_configs": [
+  {
+   "acc": 0.85,
+   "embeddings": "gigapath",
+   "metadata": true,
+   "C": 10.0
+  },
+  {
+   "acc": 0.8388888888888889,
+   "embeddings": "gigapath",
+   "metadata": false,
+   "C": 10.0
+  },
+  {
+   "acc": 0.8222222222222222,
+   "embeddings": "gigapath+hoptimus",
+   "metadata": false,
+   "C": 10.0
+  },
+  {
+   "acc": 0.8111111111111111,
+   "embeddings": "gigapath+hoptimus",
+   "metadata": true,
+   "C": 10.0
+  },
+  {
+   "acc": 0.8111111111111111,
+   "embeddings": "gigapath+biomedclip",
+   "metadata": true,
+   "C": 10.0
+  },
+  {
+   "acc": 0.8055555555555556,
+   "embeddings": "gigapath+biomedclip",
+   "metadata": false,
+   "C": 10.0
+  },
+  {
+   "acc": 0.7944444444444444,
+   "embeddings": "gigapath+biomedclip+hoptimus",
+   "metadata": false,
+   "C": 10.0
+  },
+  {
+   "acc": 0.7888888888888889,
+   "embeddings": "gigapath+biomedclip+hoptimus",
+   "metadata": true,
+   "C": 10.0
+  }
+ ],
+ "held_out_predictions": {
+  "Bladder": 7,
+  "Breast": 9,
+  "Colon and rectum": 14,
+  "Kidney": 4,
+  "Liver": 4,
+  "Lung": 5,
+  "Other or mixed": 2,
+  "Prostate": 6,
+  "Stomach": 6,
+  "Thyroid": 6,
+  "Uterus": 4
+ }
+}

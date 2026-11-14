@@ -12,3 +12,4 @@ pipelines/*/.venv/
 .claude/
 *.log
 docs-preview.jpg
+biobase/data/

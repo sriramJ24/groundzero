@@ -1,0 +1,24 @@
+Maize leaf sample images: PlantVillage Dataset
+Dataset: PlantVillage Dataset (raw/color), https://github.com/spMohanty/PlantVillage-Dataset
+Paper: Hughes, D. P. & Salathe, M. (2015). An open access repository of images on plant health to enable the development of mobile disease diagnostics. arXiv:1511.08060.
+Also cited by the repo: Mohanty, Hughes & Salathe (2016), Frontiers in Plant Science 7:1419, doi:10.3389/fpls.2016.01419.
+Licence: CC BY-SA 3.0 (cc-by-sa-3.0), as stated in the repo's README_HF.md metadata. The repo has no separate LICENSE file. Attribution required; derivatives must be shared under the same licence.
+Modifications: each image centre-cropped to 4:3 and resized to 320x240, re-encoded as JPEG quality 82.
+
+Output file  <-  original file name (class)
+healthy_01.jpg  <-  457d6124-02df-4915-b8b1-21e6d987019e___R.S_HL 7949 copy 2.jpg  (class: Corn_(maize)___healthy)
+healthy_02.jpg  <-  d47b58e9-1131-425b-a1da-1d607caef89e___R.S_HL 8014 copy.jpg  (class: Corn_(maize)___healthy)
+healthy_03.jpg  <-  1d81ce56-55bc-4037-8d1f-6d1ea0f94698___R.S_HL 5530 copy 2.jpg  (class: Corn_(maize)___healthy)
+healthy_04.jpg  <-  56e3464d-39d5-4694-b34a-2af5866c949a___R.S_HL 5563 copy.jpg  (class: Corn_(maize)___healthy)
+healthy_05.jpg  <-  8d853d00-62b0-445e-b33e-788503eacd05___R.S_HL 8099 copy.jpg  (class: Corn_(maize)___healthy)
+healthy_06.jpg  <-  0af3d913-471e-4769-9372-e0af517ba507___R.S_HL 5524 copy 2.jpg  (class: Corn_(maize)___healthy)
+healthy_07.jpg  <-  1003bded-8167-4819-a1d8-627449fe7781___R.S_HL 7991 copy 2.jpg  (class: Corn_(maize)___healthy)
+healthy_08.jpg  <-  b31834af-a313-45a2-82ff-b6d6ecc2d853___R.S_HL 8233 copy.jpg  (class: Corn_(maize)___healthy)
+discoloration_01.jpg  <-  919505a0-7e06-4a89-8faf-f308bd644a6a___RS_NLB 4141.JPG  (class: Corn_(maize)___Northern_Leaf_Blight)
+discoloration_02.jpg  <-  RS_Rust 1660.JPG  (class: Corn_(maize)___Common_rust_)
+discoloration_03.jpg  <-  bd9db5fe-e2d1-4c56-807d-2e90ea2fb6bf___RS_GLSp 4406.JPG  (class: Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot)
+discoloration_04.jpg  <-  9e99be96-fd57-4fee-930c-340ccdad9a20___RS_NLB 4178.JPG  (class: Corn_(maize)___Northern_Leaf_Blight)
+discoloration_05.jpg  <-  RS_Rust 1623.JPG  (class: Corn_(maize)___Common_rust_)
+discoloration_06.jpg  <-  792d473d-472a-43df-b0e1-dba9ab94edd5___RS_GLSp 4330.JPG  (class: Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot)
+discoloration_07.jpg  <-  09140ec5-e485-4770-9c5d-dabd9727d6d7___RS_NLB 3721.JPG  (class: Corn_(maize)___Northern_Leaf_Blight)
+discoloration_08.jpg  <-  RS_Rust 1653.JPG  (class: Corn_(maize)___Common_rust_)

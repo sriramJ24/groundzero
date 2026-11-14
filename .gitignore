@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+backend/fieldos.db*
+backend/uploads/*
+!backend/uploads/.gitkeep
+pipelines/*/cache/
+pipelines/*/.venv/
+.claude/
+*.log

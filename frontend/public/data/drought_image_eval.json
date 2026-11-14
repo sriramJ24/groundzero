@@ -1,0 +1,23 @@
+{
+  "dataset": {
+    "name": "Maize-Drought-Stress-Dataset-Raw (Trial001_3.zip only)",
+    "doi_or_url": "10.5281/zenodo.10991581",
+    "license": "CC BY 4.0",
+    "citation": "Banerjee, S. (2024). Maize-Drought-Stress-Dataset-Raw. Zenodo. https://doi.org/10.5281/zenodo.10991581",
+    "trial_used": "Trial001_3",
+    "n_images": 2405,
+    "n_crops": 0
+  },
+  "features": [],
+  "models": [],
+  "accuracy_by_period": [],
+  "limitations": [
+    "Archive downloaded and inspected (1.2 GB, 2405 JPEGs, 1640x1232), but the documented layout (4 plants side by side; 1 and 3 watered, 2 and 4 stressed) does not hold in these frames: each frame shows only about 1-2 plants and consecutive frames cycle through different camera positions/heights, so no frame-to-plant-position mapping could be established.",
+    "Only 2 capture dates (2020-10-18 and 2020-10-19) are present, so a hold-out-by-last-30%-of-dates split is impossible and there is no days-since-start trend to report.",
+    "Images are lit by pink/red LED grow lights, so RGB and excess-green indices are not comparable to daylight field imagery.",
+    "Without verifiable per-plant labels, any watered-vs-stressed classifier would be trained on guessed labels; no model was trained and no accuracy is reported. No wilting_*.jpg or healthy_zen_*.jpg images were produced because no crop can be honestly labelled as drought-stressed.",
+    "Other trials (Trial001_1,2,4,5, Trial002, Trial003) were not downloaded and might have a usable layout; not verified."
+  ],
+  "status": "not_validated_layout_mismatch",
+  "generated_at": "2026-11-14T21:37:17.424168+00:00"
+}

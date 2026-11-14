@@ -1,6 +1,6 @@
 # Biobase challenge: Find the Right Patients
 
-A separate, small entry for the Biobase sponsor challenge at DNA Forge (Nov 14, 2026). It is independent of the FIELDOS farm dashboard and uses only Biobase's own synthetic pathology reports. No agricultural data is involved, and nothing here is for medical use.
+A separate, small entry for the Biobase sponsor challenge at DNA Forge (Nov 14, 2026). It is independent of the GroundZero farm dashboard and uses only Biobase's own synthetic pathology reports. No agricultural data is involved, and nothing here is for medical use.
 
 ## What it does
 

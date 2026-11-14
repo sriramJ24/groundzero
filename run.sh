@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One command to run FIELDOS locally: builds the dashboard and serves it with the API on port 8000.
+# One command to run GroundZero locally: builds the dashboard and serves it with the API on port 8000.
 # Requirements: Python 3.10+ and Node 20+.
 set -euo pipefail
 cd "$(dirname "$0")"

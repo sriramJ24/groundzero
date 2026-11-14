@@ -1,6 +1,6 @@
-# FIELDOS — Farm Intelligence / Digital Twin
+# GroundZero — Farm Intelligence / Digital Twin
 
-Hackathon prototype (DNAForge, Agricultural Resilience track). A low-cost camera on existing farm machinery photographs crops as the machine works. FIELDOS turns those photos, the irrigation and application logs, and the weather forecast into one view of the field: a rotatable 3D model that doubles as a heatmap, where hovering any zone shows everything known about it and what to check next.
+Hackathon prototype (DNAForge, Agricultural Resilience track). A low-cost camera on existing farm machinery photographs crops as the machine works. GroundZero turns those photos, the irrigation and application logs, and the weather forecast into one view of the field: a rotatable 3D model that doubles as a heatmap, where hovering any zone shows everything known about it and what to check next.
 
 > **Read this first.** This is a prototype. The field, its zones, the irrigation and pesticide logs and the machine path are **simulated** and labelled as such in the UI. Weather, soil-moisture history, satellite NDVI and the model evaluations are **real public data**, each labelled with its source. Scores are transparent rules, not a trained model, and every recommendation is for a person to review. Nothing controls machinery and no product or dosage is ever recommended.
 
@@ -95,6 +95,8 @@ pipelines/  Scripts that fetched and evaluated the public datasets
 shared/     Capture contract and the demo-data generator
 run.sh      One-command local run
 ```
+
+The product was called FIELDOS earlier in the hackathon. Lower-case `fieldos` identifiers (device ids such as `fieldos-esp32-01`, the `FIELDOS_DB` test variable, the database file name) are part of the camera contract or internal and were left unchanged so the firmware keeps working.
 
 To rename the product, change `PRODUCT_NAME` in `frontend/src/config.ts` and `backend/config.py`.
 

@@ -67,7 +67,7 @@ function Sidebar() {
     <nav className="flex w-[208px] shrink-0 flex-col border-r border-ink-700 bg-ink-900">
       <div className="flex items-center gap-2.5 border-b border-ink-700 px-4 py-3.5">
         <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden><rect x="1" y="1" width="24" height="24" rx="6" fill="#0e2319" stroke="#2f8f5b" /><path d="M6 17l4-4 3 3 7-8" fill="none" stroke="#63d394" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        <div className="leading-tight"><div className="text-[15px] font-bold tracking-[0.14em]">{PRODUCT_NAME}</div><div className="text-[9.5px] uppercase tracking-wider text-mist-400">{PRODUCT_TAGLINE}</div></div>
+        <div className="leading-tight"><div className="text-[16px] font-bold tracking-[0.02em]">{PRODUCT_NAME}</div><div className="text-[9.5px] uppercase tracking-wider text-mist-400">{PRODUCT_TAGLINE}</div></div>
       </div>
       <div className="flex-1 space-y-0.5 p-2">
         {NAV.map((n) => (

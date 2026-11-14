@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-PRODUCT_NAME = "FIELDOS"
+PRODUCT_NAME = "GroundZero"
 DEMO_ZONE_MAP = {"demo-zone-1": "F6"}
 MAX_UPLOAD_BYTES = 2_000_000
 PORT = 8000

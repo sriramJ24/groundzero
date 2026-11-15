@@ -90,6 +90,10 @@ The model predicts how big a plant will be well ahead of time, mostly from its e
 
 **Not measured at all:** accuracy of the on-device model (not trained yet), pesticide efficacy, forecast skill against in-field probes, anything on a real farm.
 
+## Biobase sponsor challenge (separate entry)
+
+`biobase/` holds a separate, small entry for Biobase's "Find the Right Patients" challenge, built only on their synthetic pathology reports and slide embeddings. Held-out results from their self-evaluation: criteria search mean F1 1.000 (baseline 0.27), slide organ labels 79.1% (baseline about 70%), similar slides precision at 1/5/10 of 0.836/0.779/0.765. Details and limits: [biobase/README.md](biobase/README.md).
+
 ## Layout
 
 ```

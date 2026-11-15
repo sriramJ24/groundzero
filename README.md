@@ -1,114 +1,99 @@
-# GroundZero — Farm Intelligence / Digital Twin
+# GroundZero
 
-Hackathon prototype (DNAForge, Agricultural Resilience track). A low-cost camera on existing farm machinery photographs crops as the machine works. GroundZero turns those photos, the irrigation and application logs, and the weather forecast into one view of the field: a rotatable 3D model that doubles as a heatmap, where hovering any zone shows everything known about it and what to check next.
+A farm dashboard built at the DNAForge AI x Biology hackathon (Agricultural Resilience track).
 
-> **Read this first.** This is a prototype. The field, its zones, the irrigation and pesticide logs and the machine path are **simulated** and labelled as such in the UI. Weather, soil-moisture history, satellite NDVI and the model evaluations are **real public data**, each labelled with its source. Scores are transparent rules, not a trained model, and every recommendation is for a person to review. Nothing controls machinery and no product or dosage is ever recommended.
+The idea: put a cheap camera on machinery a farmer already owns. As the sprayer or tractor works the field, it photographs the crop. GroundZero puts those photos, the irrigation and spray logs, and the weather forecast into one view: a 3D model of the field that doubles as a heatmap. Hover a zone and you see everything known about it and what to check next.
+
+**This is a prototype.** The field, its zones, the logs and the machine path are simulated, and the UI says so wherever they appear. The weather, soil-moisture history, satellite and aerial imagery, and the model results are real public data. Scores are simple, visible rules, not a trained model. Nothing controls machinery and nothing recommends a product or dose.
 
 ## Run it
 
-Requirements: Python 3.10+ and Node 20+.
+You need Python 3.10+ and Node 20+.
 
 ```bash
 ./run.sh
 ```
 
-Then open http://localhost:8000. The script creates a Python environment, builds the dashboard and serves both the dashboard and the API on port 8000. It prints the address the ESP32 should post to.
+Open http://localhost:8000. The script sets everything up and prints the address the camera should post to.
 
-No backend? The dashboard also runs on its own from bundled demo data: `cd frontend && npm install && npm run dev`, then open http://localhost:5173. The header shows "Backend: not running" and uploads stay in the browser.
-
-Check the backend:
+To check the backend:
 
 ```bash
 backend/.venv/bin/python backend/tests/smoke_test.py
 ```
 
-## What to try (2 minutes)
+## What to try
 
-0. **Farm overview (the landing page).** The app opens above a real aerial photo of farmland with a slow orbiting camera. Use the arrows (or left/right keys, or swipe on the bottom band on a phone) to switch between Demo Fields A, B and C, click inside the outline to pick a zone, then "Open Field" or "Open zone". "Farm overview" in the workspace header brings you back. Links such as `#/field/field-B/zone/H8` open directly.
-1. **Digital Twin.** Drag to rotate, scroll to zoom. Hover a zone to open its panel; click to pin it. Switch layers along the top: crop health, drought/heat risk, water applied, pesticide coverage, forecast impact, satellite NDVI. With "Height = value" on, problem zones rise out of the field.
-2. **Weather switch.** "This week" uses the live Open-Meteo forecast for the field coordinates. "Aug 2026 heatwave" replays the real hottest week of last summer at the same location, to show how the risk layers respond.
-3. **Replay.** Play or scrub the machine pass; the trail and image pins follow.
-4. **Simulate capture** (top right). Pick a sample photo, a zone and a label and send it. It goes through the same `POST /api/captures` endpoint the camera uses; the pin, gallery, zone score and Action Center update live.
-5. **Action Center.** Ranked suggestions, each with the evidence that produced it.
-6. **Model Evidence.** What has actually been measured, including the results that did not go our way.
+1. **Landing page.** You start above a real aerial photo of farmland with a slowly orbiting camera. Use the arrows to switch between three demo fields, click inside the outline to pick a zone, then open it.
+2. **3D field.** Drag to rotate, scroll to zoom. Hover a zone to open its panel, click to pin it. Switch layers along the top: crop health, drought and heat risk, water applied, pesticide coverage, forecast impact, satellite NDVI. Problem zones rise out of the field.
+3. **Weather switch.** "This week" is the live forecast. "Aug 2026 heatwave" replays the real hottest week of last summer at the same spot, so you can see the risk layers react.
+4. **Simulate capture** (top right). Send a photo to a zone. It goes through the same endpoint the camera uses, and the map, gallery, zone score and action list update live.
+5. **Action Center.** Ranked suggestions, each with the evidence behind it.
+6. **Model Evidence.** What we actually measured, including what didn't work.
 
-## Camera → dashboard
+## Camera to dashboard
 
-The ESP32-CAM sends a raw JPEG with metadata in `X-*` headers. Full contract: [shared/capture-contract.md](shared/capture-contract.md).
+The camera sends a raw JPEG with its metadata in `X-*` headers. Full details are in [shared/capture-contract.md](shared/capture-contract.md).
 
 ```bash
 curl -X POST http://<LAPTOP_LAN_IP>:8000/api/captures -H "Content-Type: image/jpeg" -H "X-Device-ID: groundzero-esp32-01" -H "X-Field-ID: field-A" -H "X-Zone-ID: demo-zone-1" -H "X-Edge-Label: discoloration" -H "X-Edge-Confidence: 0.72" -H "X-Capture-Uptime-Ms: 31415" --data-binary @frontend/public/demo/images/discoloration_01.jpg
 ```
 
-Use the laptop's LAN IP, not `localhost`, from the board. There is no GPS on the board, so the zone is assigned manually (`demo-zone-1` maps to zone F6). Sensor fields the device does not measure are stored as `null` and shown as "not measured".
+There is no GPS on the board, so the zone is set by hand. Anything the device doesn't measure is stored as empty and shown as "not measured".
 
-Other endpoints: `GET /api/captures`, `GET /api/captures/{id}/image`, `POST /api/captures/{id}/review`, `GET /api/zones`, `GET /api/field`, `GET /api/health`, `GET /api/events` (live stream).
+The current firmware in [hardware/](hardware/) saves to an SD card and does not post to this endpoint yet, so in the demo photos come in through the simulator.
 
-## What is real and what is simulated
+## What's real and what's simulated
 
 | Data | Status | Source |
 |---|---|---|
-| Field layout, zone soil/exposure, baseline health | Simulated | `shared/gen_demo.mjs` |
-| Irrigation log, application log, machine path | Simulated | `shared/gen_demo.mjs` |
-| Seeded gallery photos | Real photos, simulated zone assignment | PlantVillage maize leaves (CC BY-SA 3.0); Wikimedia Commons drought-stressed maize (PD / CC BY / CC BY-SA). Attribution files in `frontend/public/demo/images/` |
-| Camera captures | Real when the ESP32 posts; otherwise marked simulated | `POST /api/captures` |
-| Landing-page aerial imagery | Real, public domain | USDA NAIP via USGS The National Map; three reference locations in Yolo County, CA, laid flat (no elevation is invented). Field outlines and names are demo fixtures |
-| Fields B and C | Simulated fixtures, separate from Field A | `shared/gen_demo.mjs`. They run in the browser only; the backend and the camera endpoint serve Field A |
-| Login | Not implemented | The landing page's "Log in" says so. There are no accounts and no private farm data |
-| Weather forecast | Real | Open-Meteo forecast API for 38.543, −121.872 |
-| Heatwave scenario | Real historical week (1–7 Aug 2026) | Open-Meteo archive (ERA5) |
-| Soil moisture history | Real, but modelled reanalysis, not a probe in a field | Open-Meteo archive (ERA5-Land), NASA POWER |
-| Satellite NDVI | Real | Sentinel-2 L2A via Element84 Earth Search; a real 360 m square near Davis, CA, used as the reference location. It is not linked to the simulated zone values |
-| Health, drought, heat, forecast-impact scores | Rule-based, indicative | `frontend/src/data/scoring.ts`, `backend/scoring.py` |
+| Field layout, zone soil, baseline health | Simulated | `shared/gen_demo.mjs` |
+| Irrigation log, spray log, machine path | Simulated | `shared/gen_demo.mjs` |
+| Fields B and C | Simulated, separate from Field A | Browser only; the backend serves Field A |
+| Gallery photos | Real photos, assigned to zones by us | PlantVillage (CC BY-SA 3.0), Wikimedia Commons |
+| Landing page imagery | Real, public domain | USDA NAIP via USGS, Yolo County, CA |
+| Weather forecast and heatwave replay | Real | Open-Meteo |
+| Soil moisture history | Real, but modelled, not a probe in a field | ERA5-Land, NASA POWER |
+| Satellite NDVI | Real | Sentinel-2 |
+| Health and risk scores | Simple rules | `frontend/src/data/scoring.ts` |
+| Login | Not built | The "Log in" button says so |
 
-## Measured results
+## What we measured
 
-Everything below was computed by the scripts in `pipelines/` and is shown in the Model Evidence view exactly as computed.
+**Soil moisture forecast** (24 to 72 hours ahead, trained on 2021 to 2024, tested on 2026). Given the real future weather, the model beats "assume nothing changes" by 40 to 47%. Without future weather, it is 27 to 73% worse. A real forecast would land somewhere in between, and we haven't measured that.
 
-**Soil moisture forecast** (0–7 cm, ERA5-Land at the field location; gradient-boosted trees; trained 2021–2024, tested on 2026, n = 2,536):
+**Crop outcome under drought and heat** (IPK maize dataset, 765 plants, whole genotypes held out). The model predicts how big a plant will be two to four weeks later (R² 0.83 and 0.78, against 0.39 and 0.47 for guessing the group average). It cannot predict how much a given genotype loses to stress; there it does worse than guessing the average. These are greenhouse pots, not a field.
 
-| Variant | +24 h MAE | +48 h MAE | +72 h MAE | vs persistence |
-|---|---|---|---|---|
-| With observed future weather as a stand-in for a forecast | 0.0088 | 0.0123 | 0.0155 | 40–47% better |
-| Without any future weather | 0.0255 | 0.0306 | 0.0370 | 27–73% **worse** |
-| Persistence baseline | 0.0147 | 0.0230 | 0.0292 | — |
+**Camera drought detection** (Zenodo maize images). Not validated. The images didn't match the dataset's described layout, so we claim nothing.
 
-Units are m³/m³. Without future weather the model does not beat simply assuming nothing changes. With perfect knowledge of future weather it does. A real forecast would land somewhere between, and that has not been measured. The target is reanalysis, not a sensor in a field.
+**Not measured:** the on-device model, pesticide effectiveness, or anything on a real farm.
 
-**Camera drought detection on the Zenodo maize dataset: not validated.** We downloaded one trial (2,405 images) but the frames did not match the documented four-plants-side-by-side layout, so plants could not be labelled reliably. No accuracy is claimed.
+## Biobase challenge
 
-**Crop outcome prediction** (IPK maize drought + heat phenotyping, 765 plants, 125 genotypes, whole genotypes held out in 5 folds; predicting from measurements up to the first days of stress):
+`biobase/` is a separate entry for Biobase's "Find the Right Patients" challenge, using only their data. Results on their held-out answer key:
 
-| Target | Model R² (MAE % of mean) | Treatment-group mean | Last value carried forward |
-|---|---|---|---|
-| Biovolume at end of stress (day 21) | 0.83 (23.1%) | 0.39 (45.0%) | −0.63 (87.9%) |
-| Biovolume after recovery (day 35) | 0.78 (26.2%) | 0.47 (39.6%) | −1.50 (98.2%) |
-| Relative loss vs control, day 21 | −0.37 (15.2%) | −0.01 (13.1%) | −3.38 (30.6%) |
-| Relative loss vs control, day 35 | −0.26 (19.4%) | −0.01 (16.4%) | −1.99 (30.0%) |
+| Task | Ours | Their baseline |
+|---|---|---|
+| Criteria search | F1 1.000 | 0.27 |
+| Slide organ labels | 79.1% | about 70% |
+| Similar slides (precision at 1 / 5 / 10) | 0.836 / 0.779 / 0.765 | about 0.8 / 0.7 / 0.6 |
 
-The model predicts how big a plant will be well ahead of time, mostly from its early size and its treatment. It does **not** predict how much a given genotype loses to stress: there it is worse than guessing the average. Control and stress were separate experiments and the stress plants were already 59% smaller before stress began, so the raw 76.6% reduction at day 21 overstates the effect (about 43% after adjusting for that gap). These are greenhouse pots, not a field, and not this farm.
-
-**Not measured at all:** accuracy of the on-device model (not trained yet), pesticide efficacy, forecast skill against in-field probes, anything on a real farm.
-
-## Biobase sponsor challenge (separate entry)
-
-`biobase/` holds a separate, small entry for Biobase's "Find the Right Patients" challenge, built only on their synthetic pathology reports and slide embeddings. Held-out results from their self-evaluation: criteria search mean F1 1.000 (baseline 0.27), slide organ labels 79.1% (baseline about 70%), similar slides precision at 1/5/10 of 0.836/0.779/0.765. Details and limits: [biobase/README.md](biobase/README.md).
+More in [biobase/README.md](biobase/README.md).
 
 ## Layout
 
 ```
-frontend/   React + TypeScript + Vite, React Three Fiber for the 3D field
-backend/    FastAPI + SQLite: capture ingestion, images, review, live events
-pipelines/  Scripts that fetched and evaluated the public datasets
-shared/     Capture contract and the demo-data generator
-run.sh      One-command local run
+frontend/   React + TypeScript, React Three Fiber for the 3D views
+backend/    FastAPI + SQLite: photo uploads, review, live updates
+hardware/   ESP32-CAM firmware and model trainers
+pipelines/  Scripts that pulled and evaluated the public data
+biobase/    Biobase challenge entry
+shared/     Camera contract and demo data generator
 ```
 
-To rename the product, change `PRODUCT_NAME` in `frontend/src/config.ts` and `backend/config.py`.
+## Credits
 
-## Data credits
-
-Open-Meteo (CC BY 4.0) · ERA5 / ERA5-Land, Copernicus Climate Change Service · NASA POWER · Copernicus Sentinel-2 via Element84 Earth Search · PlantVillage (Hughes & Salathé 2015; Mohanty et al. 2016) · Wikimedia Commons contributors (see attribution file) · Banerjee, *Maize-Drought-Stress-Dataset-Raw*, Zenodo 10.5281/zenodo.10991581 · Shi, *High-throughput shoot phenotyping of maize under combined drought and heat stress*, IPK e!DAL 10.5447/ipk/2025/8.
+Open-Meteo, ERA5 and ERA5-Land (Copernicus), NASA POWER, Sentinel-2 via Element84 Earth Search, USDA NAIP via USGS, PlantVillage (Hughes & Salathé 2015), Wikimedia Commons contributors, Banerjee's Maize Drought Stress dataset (Zenodo 10.5281/zenodo.10991581), and Shi's maize phenotyping dataset (IPK 10.5447/ipk/2025/8).
 
 ## Team
 

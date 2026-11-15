@@ -37,7 +37,7 @@ backend/.venv/bin/python backend/tests/smoke_test.py
 The ESP32-CAM sends a raw JPEG with metadata in `X-*` headers. Full contract: [shared/capture-contract.md](shared/capture-contract.md).
 
 ```bash
-curl -X POST http://<LAPTOP_LAN_IP>:8000/api/captures -H "Content-Type: image/jpeg" -H "X-Device-ID: fieldos-esp32-01" -H "X-Field-ID: field-A" -H "X-Zone-ID: demo-zone-1" -H "X-Edge-Label: discoloration" -H "X-Edge-Confidence: 0.72" -H "X-Capture-Uptime-Ms: 31415" --data-binary @frontend/public/demo/images/discoloration_01.jpg
+curl -X POST http://<LAPTOP_LAN_IP>:8000/api/captures -H "Content-Type: image/jpeg" -H "X-Device-ID: groundzero-esp32-01" -H "X-Field-ID: field-A" -H "X-Zone-ID: demo-zone-1" -H "X-Edge-Label: discoloration" -H "X-Edge-Confidence: 0.72" -H "X-Capture-Uptime-Ms: 31415" --data-binary @frontend/public/demo/images/discoloration_01.jpg
 ```
 
 Use the laptop's LAN IP, not `localhost`, from the board. There is no GPS on the board, so the zone is assigned manually (`demo-zone-1` maps to zone F6). Sensor fields the device does not measure are stored as `null` and shown as "not measured".
@@ -103,8 +103,6 @@ pipelines/  Scripts that fetched and evaluated the public datasets
 shared/     Capture contract and the demo-data generator
 run.sh      One-command local run
 ```
-
-The product was called FIELDOS earlier in the hackathon. Lower-case `fieldos` identifiers (device ids such as `fieldos-esp32-01`, the `FIELDOS_DB` test variable, the database file name) are part of the camera contract or internal and were left unchanged so the firmware keeps working.
 
 To rename the product, change `PRODUCT_NAME` in `frontend/src/config.ts` and `backend/config.py`.
 

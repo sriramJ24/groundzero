@@ -33,7 +33,7 @@ export const loadDataFile = <T,>(name: string) => tryJson<T>(`${BASE}data/${name
 const normalise = (c: Capture, seededMax: number): Capture => ({
   ...c,
   image_url: c.image_url ?? `${BASE}demo/images/${c.image_file}`,
-  live: !(c.t != null && c.t <= seededMax && c.provenance === 'simulated' && c.device_id === 'fieldos-sim-01'),
+  live: !(c.t != null && c.t <= seededMax && c.provenance === 'simulated' && c.device_id.endsWith('-sim-01')),
 })
 
 export async function loadAll(fieldId: string = BACKEND_FIELD): Promise<{ mode: Mode; data: DemoData }> {
@@ -59,7 +59,7 @@ export async function postCapture(mode: Mode, input: UploadInput): Promise<Captu
     const r = await fetch('/api/captures', {
       method: 'POST', body: jpeg,
       headers: {
-        'Content-Type': 'image/jpeg', 'X-Device-ID': input.deviceId ?? 'fieldos-simulator', 'X-Field-ID': 'field-A', 'X-Zone-ID': input.zoneId,
+        'Content-Type': 'image/jpeg', 'X-Device-ID': input.deviceId ?? 'groundzero-simulator', 'X-Field-ID': 'field-A', 'X-Zone-ID': input.zoneId,
         'X-Edge-Label': input.label, 'X-Edge-Confidence': input.confidence.toFixed(4), 'X-Capture-Uptime-Ms': String(Math.round(performance.now())),
         'X-Timestamp-Unix': String(Math.floor(Date.now() / 1000)), 'X-Model-Version': 'manual-simulator', 'X-Provenance': 'simulated',
         ...(input.inferenceMs ? { 'X-Inference-Ms': String(input.inferenceMs) } : {}),
@@ -74,7 +74,7 @@ export async function postCapture(mode: Mode, input: UploadInput): Promise<Captu
   }
   const dims = await imageDims(jpeg)
   return {
-    id: `capture_local_${Date.now()}`, device_id: input.deviceId ?? 'fieldos-simulator', field_id: input.fieldId ?? BACKEND_FIELD, zone_id: input.zoneId, reported_zone_id: input.zoneId,
+    id: `capture_local_${Date.now()}`, device_id: input.deviceId ?? 'groundzero-simulator', field_id: input.fieldId ?? BACKEND_FIELD, zone_id: input.zoneId, reported_zone_id: input.zoneId,
     captured_at: new Date().toISOString(), received_at: new Date().toISOString(), capture_uptime_ms: Math.round(performance.now()), position: null,
     image_url: URL.createObjectURL(jpeg), image: { ...dims, bytes: jpeg.size },
     edge_prediction: { label: input.label, confidence: input.confidence, model_version: 'manual-simulator', label_known: true },

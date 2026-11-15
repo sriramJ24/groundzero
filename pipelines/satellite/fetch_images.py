@@ -1,7 +1,7 @@
 import ssl, certifi
 import urllib.parse, urllib.request, io, random, glob
 from PIL import Image
-OUT="/Users/sriramjoshi/Code/Hackathons/fieldos-ai/frontend/public/demo/images/"
+OUT="/Users/sriramjoshi/Code/Hackathons/GroundZero/groundzero/frontend/public/demo/images/"
 cls={"healthy":"Corn_(maize)___healthy","blight":"Corn_(maize)___Northern_Leaf_Blight","rust":"Corn_(maize)___Common_rust_","gray":"Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot"}
 lst={k:open("cache/list_"+"".join(c if c.isalnum() else "_" for c in v)+".txt").read().split("\n") for k,v in cls.items()}
 lst={k:[x for x in v if x.lower().endswith(".jpg")] for k,v in lst.items()}

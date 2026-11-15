@@ -20,4 +20,4 @@ out=dict(source="Sentinel-2 L2A via Element84 Earth Search (AWS open data)",
  latest=latest,series=series,
  caveat="Real imagery of a real location used as the demo field; the dashboard's other zone data is simulated and is not derived from this field.",
  generated_at=datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"))
-json.dump(out,open("/Users/sriramjoshi/Code/Hackathons/fieldos-ai/frontend/public/data/ndvi_zones.json","w"),indent=1)
+json.dump(out,open("/Users/sriramjoshi/Code/Hackathons/GroundZero/groundzero/frontend/public/data/ndvi_zones.json","w"),indent=1)

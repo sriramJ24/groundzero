@@ -5,8 +5,8 @@ import tempfile
 from pathlib import Path
 
 tmp = tempfile.mkdtemp()
-os.environ["FIELDOS_DB"] = os.path.join(tmp, "t.db")
-os.environ["FIELDOS_UPLOADS"] = os.path.join(tmp, "uploads")
+os.environ["GROUNDZERO_DB"] = os.path.join(tmp, "t.db")
+os.environ["GROUNDZERO_UPLOADS"] = os.path.join(tmp, "uploads")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from fastapi.testclient import TestClient  # noqa: E402

@@ -96,7 +96,7 @@ path.forEach((p, i) => {
   const conf = round(label === 'healthy' ? 0.78 + 0.2 * rnd() : 0.52 + 0.42 * rnd(), 2)
   const id = `capture_${String(captures.length + 1).padStart(3, '0')}`
   captures.push({
-    id, device_id: 'fieldos-sim-01', field_id: cfg.id, zone_id: z.id, reported_zone_id: z.id,
+    id, device_id: 'groundzero-sim-01', field_id: cfg.id, zone_id: z.id, reported_zone_id: z.id,
     captured_at: null, received_at: iso((machine.duration_s - p.t) * 1000 + 20 * 60000),
     capture_uptime_ms: 12000 + p.t * 1000, position: null,
     image_file: `${label}_${String(n).padStart(2, '0')}.jpg`,

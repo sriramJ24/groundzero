@@ -91,6 +91,8 @@ More in [biobase/README.md](biobase/README.md).
 
 ## Layout
 
+Working on this repo with an agent? Start with [CLAUDE.md](CLAUDE.md) (same text as [AGENTS.md](AGENTS.md)).
+
 ```
 frontend/   React + TypeScript, React Three Fiber for the 3D views
 backend/    FastAPI + SQLite: photo uploads, review, live updates
@@ -98,6 +100,7 @@ hardware/   ESP32-CAM firmware and model trainers
 pipelines/  Scripts that pulled and evaluated the public data
 biobase/    Biobase challenge entry
 shared/     Camera contract and demo data generator
+docs/       Decisions, Pi capture format (draft), Cotal setup, GPU job template
 ```
 
 ## Credits

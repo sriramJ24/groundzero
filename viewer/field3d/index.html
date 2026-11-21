@@ -634,6 +634,33 @@ $('v-over').onclick = () => goView('over');
 $('v-cam').onclick = () => goView('cam');
 $('t-pivot').onclick = () => { endPass(false); pivot.visible = !pivot.visible; $('t-pivot').setAttribute('aria-pressed', String(pivot.visible)); camTag.hidden = towerTag.hidden = !pivot.visible; };
 
+// ---------- photoreal view: Gaussian splats trained on the day-40 photos (real data, section only) ----------
+let splat = null, splatOn = false, splatMeta = null;
+async function toggleSplat(on) {
+  splatOn = on; pressView(on ? 'v-splat' : 'v-over');
+  if (on && day !== '040') await setDay('040');
+  if (on && !splat) {
+    banner.innerHTML = 'Loading the photoreal model…'; banner.hidden = false;
+    const [GS, J] = await Promise.all([import('https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js'), getJSON('splat/section_splat.json')]);
+    splatMeta = J;
+    const bytes = Uint8Array.from(atob(J.splat_base64), (c) => c.charCodeAt(0));
+    const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+    splat = new GS.DropInViewer({ sharedMemoryForWorkers: false, gpuAcceleratedSort: false, integerBasedSort: false });
+    await splat.addSplatScene(url, { format: GS.SceneFormat.Splat, showLoadingUI: false, splatAlphaRemovalThreshold: 8 });
+    scene.add(splat);
+  }
+  if (splat) splat.visible = splatOn;
+  field.visible = walls.visible = !splatOn; wide.visible = !splatOn && day === '040';
+  if (splatOn) {
+    banner.innerHTML = `<b>Photoreal view.</b> ${(splatMeta.count / 1000).toFixed(0)}k Gaussian splats trained on this computer from the day-40 photos. Section only; a short CPU run, so expect soft spots.`; banner.hidden = false;
+    flyTo(new THREE.Vector3(9, 6, 13), new THREE.Vector3(0, 1.2, 0), 1500);
+  } else if (!pass) banner.hidden = true;
+}
+fetch('splat/section_splat.json', { method: 'HEAD' }).then((r) => { if (r.ok) $('v-splat').hidden = false; }).catch(() => {});
+$('v-splat').onclick = () => toggleSplat(!splatOn);
+for (const id of ['v-field', 'v-over', 'v-cam']) $(id).addEventListener('click', () => { if (splatOn) toggleSplat(false).then(() => pressView(id)); });
+dayInput.addEventListener('input', () => { if (splatOn) toggleSplat(false); });
+
 // ---------- guided tour ----------
 const TOUR = [
   { t: 'A real corn field, rebuilt in 3D', x: 'Everything you see on the ground was rebuilt from drone photos of a real field on survey day 40. The whole surveyed field is about 57 by 67 metres.', go: () => { stopPlay(); endPass(false); setCams(1); setDay('040'); mode = 'photo'; applyMode(); select(null, false); goView('field'); } },

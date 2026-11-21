@@ -27,3 +27,7 @@ python wide.py --scene <Day040 dir> --select wide_sel.json --out ../../viewer/fi
 ```
 
 What is real: the field surface, its colors, and the plot measurements. What is modeled: the pivot span, towers and PivotCam, and the pivot pass (a simulation). Greenness is photo color, not a health score; crop condition is not assessed. The photos come from a drone 12 to 18 m up, not from PivotCam.
+
+## Crop flags (no training, CPU only)
+
+`crop_flags.py --viewer viewer/field3d` reads the 12 season photo textures and writes `viewer/field3d/flags/flags.json` plus a 3 × 3 m photo crop for the 12 largest flags on each date. For every 0.5 m cell it measures greenness (excess-green index, shadow pixels skipped) and how much bare soil shows. A cell is flagged "more soil showing" when soil covers at least 25% of it and 15 points more than that date's median, or "paler than the rest" when its greenness is more than 3 robust standard deviations below that date's median; flags are connected patches of at least 0.5 m². Thresholds are relative to the same date. On this evenly managed research field the result is 59 open patches on day 28 (the early stand), none from day 33 to 83 and 2 small pale patches on day 96. Flags are places to look, not diagnoses. The viewer's Greenness layer now covers every date from the same file.

@@ -78,6 +78,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .controls { display: flex; flex-wrap: wrap; gap: 8px; }
 .seg { display: flex; border-radius: 999px; padding: 3px; }
 .seg button { background: none; border: 0; color: var(--muted); font: inherit; font-size: 12.5px; padding: 6px 11px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.seg button + button { margin-left: 0; }
 .seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
 .seg button:disabled { opacity: .4; cursor: not-allowed; }
 .seg button.go { color: var(--wheat); }
@@ -89,6 +90,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .labels { position: absolute; inset: 0; pointer-events: none; }
 .tag { position: absolute; transform: translate(-50%, -100%); pointer-events: auto; background: color-mix(in srgb, var(--panel) 90%, transparent); color: var(--fg); border: 1px solid var(--line); border-radius: 999px; font: 600 11.5px var(--ui); padding: 3px 9px; white-space: nowrap; cursor: pointer; }
 .tag.on { background: var(--accent); color: #0f1411; border-color: var(--accent); }
+.tag.flag { min-width: 24px; padding: 3px 7px; text-align: center; color: #1b130a; }
+.tag.flag.open { background: #ff7a1a; border-color: #ff7a1a; }
+.tag.flag.pale { background: #d6b4ff; border-color: #d6b4ff; }
+.tag.flag.on { outline: 2px solid var(--fg); }
 .tag.hw { cursor: default; color: var(--wheat); font-weight: 500; }
 .tag.cap { background: var(--flag); color: #1b130a; border-color: var(--flag); animation: pop .35s ease-out; }
 @keyframes pop { from { transform: translate(-50%, -60%) scale(.6); opacity: 0; } }
@@ -110,9 +115,22 @@ dialog::backdrop { background: rgba(0,0,0,.7); }
 dialog img { display: block; max-width: 100%; max-height: 78vh; }
 dialog .cap { padding: 10px 14px; font-size: 12px; color: var(--muted); display: flex; gap: 12px; align-items: center; justify-content: space-between; }
 dialog .cap button { background: var(--panel-2); border: 1px solid var(--line); color: var(--fg); border-radius: 999px; padding: 5px 12px; font: inherit; cursor: pointer; }
+body { overscroll-behavior: none; }
+.sheet-btn { display: none; }
+@media (max-width: 480px) { .light { display: none; } .legend { width: 160px; } }
+@media (pointer: coarse) {
+  .tag { padding: 6px 11px; font-size: 12.5px; }
+  .tag.flag { padding: 6px 10px; min-width: 30px; }
+  .seg button { min-height: 36px; }
+  .light input { height: 28px; }
+}
 @media (max-width: 820px) {
-  #app { grid-template-columns: 1fr; grid-template-rows: 64vh 1fr; }
-  aside { border-left: 0; border-top: 1px solid var(--line); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  #app { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto 32dvh; transition: grid-template-rows .3s; }
+  #app.sheet { grid-template-rows: minmax(0, 1fr) auto 62dvh; }
+  .sheet-btn { display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--panel); color: var(--muted); border: 0; border-top: 1px solid var(--line); font: 600 11px var(--ui); letter-spacing: .08em; text-transform: uppercase; padding: 6px 0 4px; cursor: pointer; }
+  .sheet-btn span { width: 36px; height: 4px; border-radius: 2px; background: var(--line); }
+  dialog { max-width: 100vw; margin: auto 0 0; width: 100%; border-radius: 14px 14px 0 0; }
+  aside { border-left: 0; padding-top: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
   .legend { width: 190px; font-size: 10.5px; padding: 8px 10px; }
   .legend .x { display: none; }
   .light input { width: 70px; }
@@ -163,10 +181,12 @@ dialog .cap button { background: var(--panel-2); border: 1px solid var(--line); 
           <button id="t-cams" title="How many cameras on the span">1 camera</button>
           <button id="t-pass" class="go">Run a pass</button>
         </div>
-        <div class="seg glass"><button id="t-tour" class="go">Guided tour</button></div>
+        <div class="seg glass" role="group" aria-label="Layers"><button id="t-flags" aria-pressed="false">Crop flags</button></div>
+        <div class="seg glass"><button id="t-tour" class="go">Guided tour</button><button id="t-share" title="Copy a link to this exact view">Share view</button></div>
       </div>
     </div>
   </div>
+  <button id="sheetBtn" class="sheet-btn" aria-label="Show or hide details"><span></span>Details</button>
   <aside id="side"></aside>
 </div>
 <dialog id="dlg"><img id="dlg-img" alt=""><div class="cap"><span id="dlg-cap"></span><button id="dlg-close">Close</button></div></dialog>
@@ -184,8 +204,14 @@ const step = (txt) => { lDone++; $('lbar').style.width = (100 * lDone / lTotal) 
 const getJSON = async (u) => (await fetch(u)).json();
 const decodeU16 = (J) => { const raw = Uint8Array.from(atob(J.uint16_le_base64), (c) => c.charCodeAt(0)); const q = new Uint16Array(raw.buffer); return Float32Array.from(q, (v) => J.offset_m + v * J.scale_m); };
 
-const S = await getJSON('scene.json'); step('Loading the season…');
-const SEA = await getJSON('season/season.json'); step('Loading the surface…');
+// everything the first view needs is requested at once; the height grids, the sharper day-40 photo and
+// the next dates are fetched after the field is on screen
+const pScene = getJSON('scene.json'), pSea = getJSON('season/season.json'), pFlags = getJSON('flags/flags.json').catch(() => null);
+const pWide = Promise.all([getJSON('wide/wide.json'), getJSON('wide/wide_heights.json'), fetch('wide/wide_texture.jpg').then((r) => r.blob())]);
+const pFirst = Promise.all([getJSON('season/s_040.json'), fetch('season/tex_040.jpg').then((r) => r.blob())]);
+const S = await pScene; step('Loading the season…');
+const SEA = await pSea; step('Loading the surface…');
+const FL = await pFlags;
 const DAYS = SEA.days, CHECK = SEA.height_check;
 const G = S.grid;
 const cx = (G.x0 + G.x1) / 2, cy = (G.y0 + G.y1) / 2, GZ = S.ground_z;
@@ -197,7 +223,8 @@ const dayNum = (d) => String(+d);
 // ---------- renderer, scene, sky ----------
 const stage = $('stage');
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const coarse = matchMedia('(pointer: coarse)').matches;
+renderer.setPixelRatio(Math.min(devicePixelRatio, coarse ? 1.5 : 2)); // phones: fewer pixels, smoother orbit
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.prepend(renderer.domElement);
@@ -252,15 +279,22 @@ soil.rotation.x = -Math.PI / 2; soil.position.y = -0.25; soil.receiveShadow = tr
 // ---------- season data for the measured section (real) ----------
 const texLoader = new THREE.TextureLoader();
 const loadTex = async (u) => { const t = await texLoader.loadAsync(u); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t; };
+const blobTex = async (pb) => { const u = URL.createObjectURL(await pb); const t = await loadTex(u); URL.revokeObjectURL(u); return t; };
 const cache = {};
 function dayData(d) {
   if (!cache[d]) cache[d] = (async () => {
-    const [sj, tex, hj] = await Promise.all([getJSON(`season/s_${d}.json`), loadTex(`season/tex_${d}.jpg`), d === SEA.ground_day ? null : getJSON(`season/h_${d}.json`)]);
-    return { surf: decodeU16(sj), tex, hgt: hj ? decodeU16(hj) : new Float32Array(G.nx * G.ny), hTex: null };
+    const [sj, tex] = d === '040' ? await pFirst.then(([s, b]) => Promise.all([s, blobTex(Promise.resolve(b))])) : await Promise.all([getJSON(`season/s_${d}.json`), loadTex(`season/tex_${d}.jpg`)]);
+    return { surf: decodeU16(sj), tex, hgt: null, hTex: null };
   })();
   return cache[d];
 }
-let day = '040';
+// crop height grid for a date, only fetched when the height layer is first shown
+async function heightOf(d) {
+  const dd = await dayData(d);
+  if (!dd.hgt) dd.hgt = d === SEA.ground_day ? new Float32Array(G.nx * G.ny) : decodeU16(await getJSON(`season/h_${d}.json`));
+  return dd.hgt;
+}
+let day = '040'; let booted = false;
 const first = await dayData(day); step('Loading the whole field…');
 const geo = new THREE.PlaneGeometry(W, D, G.nx - 1, G.ny - 1); geo.rotateX(-Math.PI / 2);
 const pos = geo.attributes.position;
@@ -293,7 +327,7 @@ function rebuildWalls() {
 }
 
 // ---------- the whole surveyed field, day 40 (real, coarser: 10 cm surface, 4 cm photo texture) ----------
-const [WJ, WH, wTex] = await Promise.all([getJSON('wide/wide.json'), getJSON('wide/wide_heights.json'), loadTex('wide/wide_texture.jpg')]);
+const [WJ, WH, wTex] = await pWide.then(([a, b, c]) => Promise.all([a, b, blobTex(Promise.resolve(c))]));
 step('Building the 3D surface…');
 const wSurf = decodeU16(WH);
 const wW = WJ.x1 - WJ.x0, wD = WJ.y1 - WJ.y0;
@@ -325,15 +359,47 @@ function heightTexture(h) {
 const gr = S.greenness;
 const gStops = [[0, '#b8743a'], [0.35, '#d9c46a'], [0.7, '#6fae3a'], [1, '#1f6b2a']].map(([t, c]) => [t, C(c)]);
 const gAt = (t) => { for (let i = 1; i < gStops.length; i++) if (t <= gStops[i][0]) { const [a, ca] = gStops[i - 1], [b, cb] = gStops[i]; return ca.clone().lerp(cb, (t - a) / (b - a)); } return gStops.at(-1)[1].clone(); };
-const gcv = document.createElement('canvas'); gcv.width = gr.cols * 8; gcv.height = gr.rows * 8;
-const gctx = gcv.getContext('2d');
-for (let r = 0; r < gr.rows; r++) for (let c = 0; c < gr.cols; c++) { const v = gr.values[r * gr.cols + c]; gctx.fillStyle = '#' + gAt(Math.min(1, Math.max(0, (v - gr.p5) / (gr.p95 - gr.p5)))).getHexString(); gctx.fillRect(c * 8, r * 8, 8, 8); }
-gctx.strokeStyle = '#ff7a1a'; gctx.lineWidth = 2;
-for (const i of gr.low_cells) { const r = Math.floor(i / gr.cols), c = i % gr.cols; gctx.strokeRect(c * 8 + 1, r * 8 + 1, 6, 6); }
-const gTex = new THREE.CanvasTexture(gcv); gTex.colorSpace = THREE.SRGBColorSpace; gTex.magFilter = THREE.NearestFilter;
-gTex.repeat.set(W / (gr.cols * gr.cell_m), D / (gr.rows * gr.cell_m)); gTex.offset.set(0, 1 - D / (gr.rows * gr.cell_m));
+// greenness for every date (from flags/flags.json, built by pipelines/field_model/crop_flags.py): 0.5 m cells,
+// colored from the date's own 5th to 95th percentile, so it shows where the field differs on that date
+const gTexCache = {};
+function greenTexture(d) {
+  if (gTexCache[d]) return gTexCache[d];
+  const e = FL.dates[d]; const q = Uint8Array.from(atob(e.green_u8_base64), (ch) => ch.charCodeAt(0));
+  const cv = document.createElement('canvas'); cv.width = e.cols * 8; cv.height = e.rows * 8; const ctx = cv.getContext('2d');
+  for (let r = 0; r < e.rows; r++) for (let c = 0; c < e.cols; c++) { ctx.fillStyle = '#' + gAt(q[r * e.cols + c] / 255).getHexString(); ctx.fillRect(c * 8, r * 8, 8, 8); }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.magFilter = THREE.NearestFilter;
+  t.repeat.set(W / (e.cols * FL.cell_m), D / (e.rows * FL.cell_m)); t.offset.set(0, 1 - D / (e.rows * FL.cell_m));
+  return (gTexCache[d] = t);
+}
 let hiresDay40 = null;
-texLoader.load('field_texture.jpg', (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); hiresDay40 = t; if (day === '040' && mode === 'photo') { fieldMat.map = t; fieldMat.needsUpdate = true; } });
+const loadHires = () => texLoader.load('field_texture.jpg', (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); hiresDay40 = t; if (day === '040' && mode === 'photo') { fieldMat.map = t; fieldMat.needsUpdate = true; } });
+
+// ---------- crop flags: patches that stand out from the rest of the section on the same date ----------
+const FLAG_COL = { open: '#ff7a1a', pale: '#d6b4ff' };
+const FLAG_NAME = { open: 'More soil showing', pale: 'Paler than the rest' };
+const flagCv = document.createElement('canvas'); flagCv.width = 46 * 8; flagCv.height = 50 * 8;
+const flagCtx = flagCv.getContext('2d');
+const flagTex = new THREE.CanvasTexture(flagCv); flagTex.colorSpace = THREE.SRGBColorSpace; flagTex.magFilter = THREE.NearestFilter;
+const flagLayer = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: flagTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
+flagLayer.visible = false; scene.add(flagLayer);
+let flagsOn = false; const flagTags = [];
+function drawFlags() {
+  flagTags.forEach((t) => { t.el.remove(); tags.splice(tags.indexOf(t), 1); }); flagTags.length = 0;
+  const e = FL?.dates[day]; flagLayer.visible = flagsOn && !!e;
+  if (!flagsOn || !e) return;
+  flagCv.width = e.cols * 8; flagCv.height = e.rows * 8; flagCtx.clearRect(0, 0, flagCv.width, flagCv.height);
+  flagTex.repeat.set(W / (e.cols * FL.cell_m), D / (e.rows * FL.cell_m)); flagTex.offset.set(0, 1 - D / (e.rows * FL.cell_m));
+  for (const f of e.flags) {
+    flagCtx.fillStyle = FLAG_COL[f.kind] + '3d'; flagCtx.strokeStyle = FLAG_COL[f.kind]; flagCtx.lineWidth = 1.5;
+    for (const [r, c] of f.cells_rc) { flagCtx.fillRect(c * 8, r * 8, 8, 8); flagCtx.strokeRect(c * 8 + 0.75, r * 8 + 0.75, 6.5, 6.5); }
+  }
+  flagTex.needsUpdate = true;
+  e.flags.filter((f) => f.crop).forEach((f, i) => {
+    const sv = dayCacheSurf(); const top = toV(f.x, f.y, sv ? surfAt(sv, f.x, f.y) : GZ).add(new THREE.Vector3(0, 0.6, 0));
+    const t = addTag(`${i + 1}`, top, 'flag ' + f.kind, () => selectFlag(f.id)); flagTags.push(t);
+  });
+}
+let curSurf = null; const dayCacheSurf = () => curSurf;
 
 // ---------- center pivot span with PivotCam (modeled hardware, not reconstructed) ----------
 const pivot = new THREE.Group(); scene.add(pivot);
@@ -417,7 +483,7 @@ for (const p of S.plots) {
   const stake = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.4, 8), new THREE.MeshStandardMaterial({ color: '#f3efe2' })); stake.position.y = 0.7; g.add(stake);
   scene.add(g); plotMarks[p.id] = { g, ring, top: new THREE.Vector3() };
 }
-function placePlots(surf) { for (const p of S.plots) { const m = plotMarks[p.id]; m.g.position.copy(toV(p.x, p.y, surfAt(surf, p.x, p.y))); m.top.copy(m.g.position).add(new THREE.Vector3(0, 1.5, 0)); } }
+function placePlots(surf) { curSurf = surf; for (const p of S.plots) { const m = plotMarks[p.id]; m.g.position.copy(toV(p.x, p.y, surfAt(surf, p.x, p.y))); m.top.copy(m.g.position).add(new THREE.Vector3(0, 1.5, 0)); } }
 placePlots(first.surf);
 
 // ---------- labels ----------
@@ -481,10 +547,13 @@ function overview() {
     <div class="chips"><span class="chip real">REAL PHOTOS + 3D</span><span class="chip real">HAND-MEASURED PLOTS</span><span class="chip model">PIVOT IS A MODEL</span></div>
     <div><div class="eyebrow" style="margin-bottom:8px">Measured plots · day ${dayNum(day)}</div><div class="list">${S.plots.map((p) => { const r = rows[p.id]; return `
       <button class="plot-btn" data-id="${p.id}"><img src="${p.crop}" alt=""><span><span class="n">${p.id.replace('Corn-', 'Plot ')}</span><br><span class="m">Tape <span class="num">${fmt(r.hand_cm)}</span> cm · photos <span class="num">${day === SEA.ground_day ? '—' : fmt(r.photo_cm)}</span> cm</span></span><span class="m">LAI <span class="num">${fmt(r.lai, 2)}</span></span></button>`; }).join('')}</div></div>
+    ${flagCard()}
     ${accuracyCard()}
-    <div class="note"><b>What is real.</b> Every surface and color comes from the drone photos and the dataset's photogrammetric depth maps. Crop height is the surface on each date minus the bare-soil surface of day 7. Plot height and leaf area index were measured on the ground. <b>What is modeled.</b> The pivot span, towers and PivotCam show where the hardware would sit, and the pass is a simulation. Sky and sun are for viewing only; photo colors are as captured. <b>Not assessed.</b> No crop-stress method has been tested yet, so nothing here is a health score.</div>
+    <div class="note"><b>What is real.</b> Every surface and color comes from the drone photos and the dataset's photogrammetric depth maps. Crop height is the surface on each date minus the bare-soil surface of day 7. Plot height and leaf area index were measured on the ground. <b>What is modeled.</b> The pivot span, towers and PivotCam show where the hardware would sit, and the pass is a simulation. Sky and sun are for viewing only; photo colors are as captured. <b>Not assessed.</b> No crop-stress method has been tested yet, so nothing here is a health score. Crop flags only mark patches that differ from the rest of the section.</div>
     <p class="sub">Source: <a style="color:var(--accent)" href="${S.source.url}" target="_blank" rel="noreferrer">UAV3DCrop</a>, ${S.source.authors}, ${S.source.license}. ${S.source.camera}.</p>`;
-  side.querySelectorAll('.plot-btn').forEach((b) => b.onclick = () => select(b.dataset.id));
+  side.querySelectorAll('.plot-btn[data-id]').forEach((b) => b.onclick = () => select(b.dataset.id));
+  side.querySelectorAll('.plot-btn[data-flag]').forEach((b) => b.onclick = () => selectFlag(b.dataset.flag));
+  const fb = $('flagsOnBtn'); if (fb) fb.onclick = () => setFlags(true);
 }
 function detail(p) {
   sideView = 'detail';
@@ -513,10 +582,48 @@ $('dlg').onclick = (e) => { if (e.target === $('dlg')) $('dlg').close(); };
 function select(id, fly = true) {
   selected = id;
   for (const [k, m] of Object.entries(plotMarks)) { m.tag.classList.toggle('on', k === id); m.ring.material.color.set(k === id ? '#8fbf3c' : '#f3efe2'); }
-  if (id) { detail(S.plots.find((q) => q.id === id)); if (fly) flyTo(plotMarks[id].top.clone().add(new THREE.Vector3(5, 7, 9)), plotMarks[id].top.clone().add(new THREE.Vector3(0, -1.2, 0))); }
+  flagTags.forEach((t) => t.el.classList.remove('on'));
+  if (id) { detail(S.plots.find((q) => q.id === id)); openSheet(); if (fly) flyTo(plotMarks[id].top.clone().add(new THREE.Vector3(5, 7, 9)), plotMarks[id].top.clone().add(new THREE.Vector3(0, -1.2, 0))); }
   else overview();
+  saveState();
 }
 const refreshSide = () => selected ? select(selected, false) : overview();
+function flagCard() {
+  if (!FL) return '';
+  const e = FL.dates[day]; const big = e.flags.filter((f) => f.crop);
+  const head = `<div><h3>Crop flags · day ${dayNum(day)}</h3><p class="sub">Patches of the section that look different from the rest of it on the same date, found from the photo colors alone. No model was trained. A flag is a place to walk to, not a diagnosis.</p></div>`;
+  let body;
+  if (e.skipped) body = `<div class="note">No flags on this date: ${e.skipped}.</div>`;
+  else if (!e.flags.length) body = `<div class="note"><b>Nothing stands out on this date.</b> Every 0.5 m square is within the normal spread of soil cover and greenness for the section. This research field is evenly managed, so a quiet result is expected.</div>`;
+  else body = `<div class="key"><span><i style="border-color:${FLAG_COL.open};border-top-width:8px;width:10px"></i>More soil showing (${e.flags.filter((f) => f.kind === 'open').length})</span><span><i style="border-color:${FLAG_COL.pale};border-top-width:8px;width:10px"></i>Paler than the rest (${e.flags.filter((f) => f.kind === 'pale').length})</span></div>
+    <div class="list">${big.map((f, i) => `<button class="plot-btn" data-flag="${f.id}"><img src="${f.crop}" alt=""><span><span class="n">Flag ${i + 1} · ${FLAG_NAME[f.kind]}</span><br><span class="m">${f.area_m2} m² · ${f.kind === 'open' ? `soil in ${f.open_pct}% of it` : `${f.green_pct_of_median}% of usual greenness`}</span></span><span class="m">›</span></button>`).join('')}</div>
+    ${e.flags.length > big.length ? `<p class="sub">${e.flags.length - big.length} smaller patches are shaded on the field without a number.</p>` : ''}`;
+  return `<div class="card">${head}${flagsOn ? body : `<button class="lnk" id="flagsOnBtn">Show crop flags on the field →</button>`}</div>`;
+}
+function selectFlag(id) {
+  const e = FL.dates[day]; const f = e.flags.find((q) => q.id === id); if (!f) return;
+  selected = null; sideView = 'flag'; const n = e.flags.filter((q) => q.crop).indexOf(f) + 1;
+  for (const m of Object.values(plotMarks)) { m.tag.classList.remove('on'); m.ring.material.color.set('#f3efe2'); }
+  flagTags.forEach((t, i) => t.el.classList.toggle('on', i === n - 1));
+  side.innerHTML = `
+    <button class="lnk" id="back">← Overview</button>
+    <div><div class="eyebrow">Crop flag ${n} · day ${dayNum(day)}</div><h2>${FLAG_NAME[f.kind]}</h2>
+    <p class="sub">Position <span class="num">${f.x.toFixed(1)} m E, ${f.y.toFixed(1)} m N</span> of the survey origin</p></div>
+    <div class="stats">
+      <div class="stat"><div class="k">Patch size</div><div class="v">${f.area_m2}<span style="font-size:12px"> m²</span></div><div class="s">${f.cells} squares of 0.5 m</div></div>
+      <div class="stat"><div class="k">${f.kind === 'open' ? 'Soil showing' : 'Greenness'}</div><div class="v">${f.kind === 'open' ? f.open_pct + '<span style="font-size:12px"> %</span>' : f.green_pct_of_median + '<span style="font-size:12px"> % of usual</span>'}</div><div class="s">${f.kind === 'open' ? `Section usual: ${Math.round(100 * e.open_median)} %` : 'Against the section median this date'}</div></div>
+      <div class="stat"><div class="k">Crop condition</div><div class="v" style="font-size:16px;font-family:var(--ui)">Not assessed</div><div class="s">Cause not known from photos</div></div>
+    </div>
+    <div class="evidence"><div class="eyebrow">Evidence · day ${dayNum(day)}</div>
+      <img src="${f.crop}" alt="Top-down photo around flag ${n}, 3 by 3 metres" data-cap="Flag ${n} on day ${dayNum(day)}: 3 × 3 m from the orthophoto, 2 cm per pixel">
+      <div class="note"><b>Why it is flagged.</b> ${(f.kind === 'open' ? FL.rules.open : FL.rules.pale).replace(/^./, (ch) => ch.toUpperCase())}. <b>What it could be.</b> ${f.kind === 'open' ? 'A thinner stand, missing or late plants, wider rows, or a shadow edge. Early in the season this is when stand gaps matter most.' : 'Leaf angle, light, residue, or plants under stress.'} Someone needs to look before anything is concluded.</div>
+    </div>`;
+  $('back').onclick = () => select(null);
+  side.querySelectorAll('.evidence img').forEach((im) => im.onclick = () => { $('dlg-img').src = im.src; $('dlg-cap').textContent = im.dataset.cap; $('dlg').showModal(); });
+  const sv = curSurf; const top = toV(f.x, f.y, surfAt(sv, f.x, f.y));
+  flyTo(top.clone().add(new THREE.Vector3(3.5, 5, 6)), top.clone());
+  openSheet(); saveState();
+}
 
 // ---------- coloring ----------
 let mode = 'photo';
@@ -525,18 +632,22 @@ async function applyMode() {
   const dd = await dayData(day);
   for (const b of ['photo', 'height', 'green']) $('m-' + b).setAttribute('aria-pressed', String(b === mode));
   if (mode === 'height') {
-    if (!dd.hTex) dd.hTex = heightTexture(dd.hgt);
+    const h = await heightOf(day); if (mode !== 'height') return;
+    if (!dd.hTex) dd.hTex = heightTexture(h);
     fieldMat.map = dd.hTex;
     legend.innerHTML = `<div class="t">Crop height · day ${dayNum(day)}</div><div class="ramp" style="background:linear-gradient(90deg,${hStops.map((c) => '#' + c.getHexString()).join(',')})"></div><div class="num" style="display:flex;justify-content:space-between"><span>0</span><span>100</span><span>200</span><span>300 cm</span></div><div class="x" style="margin-top:6px">Measured from the photos: canopy surface on this date minus the bare-soil surface of day 7, in 4 cm squares. Same scale on every date.</div>`;
   } else if (mode === 'green') {
-    fieldMat.map = gTex;
-    legend.innerHTML = `<div class="t">Photo greenness · day 40</div><div class="ramp" style="background:linear-gradient(90deg,#b8743a,#d9c46a,#6fae3a,#1f6b2a)"></div><div style="display:flex;justify-content:space-between"><span>lighter / yellower</span><span>deeper green</span></div><div class="x" style="margin-top:6px">Color measured from the photos in 0.5 m squares. Orange squares are the lightest 3% of this section. It shows where to look, not what is wrong.</div>`;
+    fieldMat.map = greenTexture(day);
+    legend.innerHTML = `<div class="t">Photo greenness · day ${dayNum(day)}</div><div class="ramp" style="background:linear-gradient(90deg,#b8743a,#d9c46a,#6fae3a,#1f6b2a)"></div><div style="display:flex;justify-content:space-between"><span>less green</span><span>greener</span></div><div class="x" style="margin-top:6px">Excess-green index of the photo in 0.5 m squares, scaled to this date's own range, so it shows where the section differs on this date. It shows where to look, not what is wrong.</div>`;
   } else fieldMat.map = day === '040' && hiresDay40 ? hiresDay40 : dd.tex;
   legend.hidden = mode === 'photo'; fieldMat.needsUpdate = true;
 }
 $('m-photo').onclick = () => { mode = 'photo'; applyMode(); };
 $('m-height').onclick = () => { mode = 'height'; applyMode(); };
-$('m-green').onclick = () => { if (day !== '040') return; mode = 'green'; applyMode(); };
+$('m-green').onclick = () => { if ($('m-green').disabled) return; mode = 'green'; applyMode(); saveState(); };
+$('m-photo').addEventListener('click', saveState); $('m-height').addEventListener('click', saveState);
+$('t-flags').onclick = () => setFlags(!flagsOn);
+function setFlags(on) { flagsOn = on; $('t-flags').setAttribute('aria-pressed', String(on)); drawFlags(); if (!on && sideView === 'flag') select(null); else refreshSide(); saveState(); }
 
 // ---------- season timeline ----------
 const dayInput = $('day');
@@ -552,10 +663,11 @@ async function setDay(d) {
   const dd = await dayData(d); if (tok !== dayToken) return;
   applySurface(dd.surf); placePlots(dd.surf);
   const isWide = d === '040'; wide.visible = isWide; walls.visible = !isWide; if (!isWide) rebuildWalls();
-  $('m-green').disabled = !isWide; $('m-green').title = isWide ? '' : 'Measured on day 40 only';
-  if (mode === 'green' && !isWide) mode = 'photo';
-  await applyMode(); refreshSide();
-  const i = DAYS.indexOf(d); if (i + 1 < DAYS.length) dayData(DAYS[i + 1]); // preload the next date
+  const hasG = !!FL?.dates[d] && d !== SEA.ground_day;
+  $('m-green').disabled = !hasG; $('m-green').title = hasG ? '' : 'Bare soil on this date';
+  if (mode === 'green' && !hasG) mode = 'photo';
+  await applyMode(); drawFlags(); if (sideView === 'flag') select(null); else refreshSide(); saveState();
+  const i = DAYS.indexOf(d); if (booted && i + 1 < DAYS.length) dayData(DAYS[i + 1]); // preload the next date
 }
 dayInput.oninput = () => { stopPlay(); setDay(DAYS[+dayInput.value]); };
 const PLAY = '<svg viewBox="0 0 14 14"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg>', PAUSE = '<svg viewBox="0 0 14 14"><rect x="2.5" y="1.5" width="3.2" height="11" rx="1" fill="currentColor"/><rect x="8.3" y="1.5" width="3.2" height="11" rx="1" fill="currentColor"/></svg>';
@@ -624,7 +736,7 @@ const VIEWS = {
 const viewBtns = ['v-field', 'v-over', 'v-cam', 'v-splat'];
 const pressView = (id) => viewBtns.forEach((b) => $(b).setAttribute('aria-pressed', String(b === id)));
 function goView(v) {
-  pressView('v-' + v); camera.fov = 40; camera.updateProjectionMatrix();
+  setTimeout(saveState, 1800); pressView('v-' + v); camera.fov = 40; camera.updateProjectionMatrix();
   if (v === 'field') { if (day !== '040') setDay('040'); flyTo(VIEWS.field.p, VIEWS.field.t, 1700); }
   if (v === 'over') flyTo(VIEWS.over.p, VIEWS.over.t);
   if (v === 'cam') { pivot.visible = true; $('t-pivot').setAttribute('aria-pressed', 'true'); camTag.hidden = towerTag.hidden = false; const cw = camWorld(); camera.fov = 41; camera.updateProjectionMatrix(); flyTo(cw.clone().addScaledVector(fwd, 0.15), cw.clone().addScaledVector(fwd, 6)); }
@@ -663,13 +775,14 @@ dayInput.addEventListener('input', () => { if (splatOn) toggleSplat(false); });
 
 // ---------- guided tour ----------
 const TOUR = [
-  { t: 'A real corn field, rebuilt in 3D', x: 'Everything you see on the ground was rebuilt from drone photos of a real field on survey day 40. The whole surveyed field is about 57 by 67 metres.', go: () => { stopPlay(); endPass(false); setCams(1); setDay('040'); mode = 'photo'; applyMode(); select(null, false); goView('field'); } },
+  { t: 'A real corn field, rebuilt in 3D', x: 'Everything you see on the ground was rebuilt from drone photos of a real field on survey day 40. The whole surveyed field is about 57 by 67 metres.', go: () => { stopPlay(); endPass(false); setCams(1); if (flagsOn) setFlags(false); setDay('040'); mode = 'photo'; applyMode(); select(null, false); goView('field'); } },
   { t: 'Six plots, measured by hand', x: 'The detailed section in the middle holds six plots where people measured height and leaf area on the same days the drone flew. They are our ground truth.', go: () => goView('over') },
   { t: 'Where PivotCam would sit', x: 'A camera on the pivot span, tilted 35° down, sees a strip of canopy a few metres ahead. The span, towers and camera are drawn models; the yellow outline is what the camera would see.', go: () => goView('cam') },
   { t: 'One pass of the pivot', x: 'As the span moves, each camera sweeps a strip and photographs the plots it passes. One camera covers only a strip, so this run uses the 3-camera what-if. A simulation on top of the real field.', go: () => { setCams(3); startPass(); } },
   { t: 'The whole season', x: 'Twelve flights from bare soil to full height. Colored by measured crop height on one fixed scale, the field fills in from pale to deep green.', go: () => { if (pass) endPass(false); mode = 'height'; setDay('007').then(() => { goView('over'); startPlay(); }); } },
   { t: 'Checked against a tape measure', x: 'Photo height tracks hand measurements across the season (66 plot visits, R² 0.95) and reads about 15 cm low. It cannot yet rank plots within one date. The chart on the right has the details.', go: () => { stopPlay(); side.scrollTop = 0; select(null, false); setTimeout(() => side.querySelector('.card')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' }), 50); } },
-  { t: 'Evidence for each plot', x: 'Click any plot to see its numbers for the date on screen, its growth curve, and the original photo. Crop condition stays "not assessed" until a method is tested.', go: () => { mode = 'photo'; endPass(false); setDay('040').then(() => select('Corn-3')); } },
+  { t: 'Crop flags: where to walk', x: 'On day 28 the photos show where more soil shows through than in the rest of the section, which can mean a thinner stand. Found from photo colors alone, no training. Numbered flags open a 3 × 3 m photo of the spot. They are places to look, not diagnoses.', go: () => { stopPlay(); mode = 'photo'; setDay('028').then(() => { setFlags(true); flyTo(new THREE.Vector3(10, 16, 18), new THREE.Vector3(0, 0.5, 0)); }); } },
+  { t: 'Evidence for each plot', x: 'Click any plot to see its numbers for the date on screen, its growth curve, and the original photo. Crop condition stays "not assessed" until a method is tested.', go: () => { mode = 'photo'; endPass(false); setFlags(false); setDay('040').then(() => select('Corn-3')); } },
 ];
 let tourI = -1;
 function showTour(i) {
@@ -698,11 +811,63 @@ function frame(now) {
   for (const t of tags) { v.copy(t.v3).project(camera); const vis = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05; t.el.style.display = vis && !t.el.hidden ? '' : 'none'; t.el.style.left = ((v.x + 1) / 2 * r.width) + 'px'; t.el.style.top = ((1 - v.y) / 2 * r.height) + 'px'; }
   requestAnimationFrame(frame);
 }
+// ---------- shareable link: the date, layers, selection and camera live in the address after # ----------
+let saveT = null;
+function stateParams() {
+  const f = (v) => v.toFixed(2).replace(/\.?0+$/, '');
+  const q = new URLSearchParams({ d: dayNum(day) });
+  if (mode !== 'photo') q.set('m', mode);
+  if (flagsOn) q.set('flags', '1');
+  if (nCams === 3) q.set('cams', '3');
+  if (!pivot.visible) q.set('pivot', '0');
+  if (selected) q.set('plot', selected.replace('Corn-', ''));
+  else if (sideView === 'flag') { const on = flagTags.findIndex((t) => t.el.classList.contains('on')); if (on >= 0) q.set('flag', String(on + 1)); }
+  const tp = anim ? anim.p : camera.position, tt = anim ? anim.t : controls.target;
+  q.set('cam', [tp.x, tp.y, tp.z, tt.x, tt.y, tt.z].map(f).join(','));
+  return q;
+}
+function saveState() {
+  if (!booted) return; clearTimeout(saveT);
+  saveT = setTimeout(() => { try { history.replaceState(null, '', '#' + stateParams().toString().replace(/%2C/g, ',')); } catch {} }, 250);
+}
+controls.addEventListener('end', saveState);
+$('t-share').onclick = async () => {
+  clearTimeout(saveT); const url = location.href.split('#')[0] + '#' + stateParams().toString().replace(/%2C/g, ',');
+  try { history.replaceState(null, '', url); } catch {}
+  let ok = false; try { await navigator.clipboard.writeText(url); ok = true; } catch {}
+  banner.innerHTML = ok ? '<b>Link copied.</b> It opens this date, these layers and this exact camera view.' : `Copy this link: <span class="num" style="user-select:all">${url}</span>`;
+  banner.hidden = false; clearTimeout(banner._t); banner._t = setTimeout(() => { if (!pass && !splatOn) banner.hidden = true; }, ok ? 3500 : 12000);
+};
+function readState() {
+  const q = new URLSearchParams(location.hash.slice(1)); const out = {};
+  const d = q.get('d') && String(q.get('d')).padStart(3, '0'); if (d && DAYS.includes(d)) out.day = d;
+  if (['height', 'green'].includes(q.get('m'))) out.mode = q.get('m');
+  out.flags = q.get('flags') === '1'; out.cams = q.get('cams') === '3' ? 3 : 1; out.pivot = q.get('pivot') !== '0';
+  if (q.get('plot') && S.plots.some((p) => p.id === 'Corn-' + q.get('plot'))) out.plot = 'Corn-' + q.get('plot');
+  if (q.get('flag')) out.flag = +q.get('flag');
+  const c = (q.get('cam') || '').split(',').map(Number); if (c.length === 6 && c.every(Number.isFinite)) out.cam = c;
+  return out;
+}
+
+// ---------- phones: the panel is a sheet under the field that opens for details ----------
+const app = $('app'); const narrow = matchMedia('(max-width: 820px)');
+function openSheet() { if (narrow.matches) { app.classList.add('sheet'); side.scrollTop = 0; } }
+$('sheetBtn').onclick = () => { app.classList.toggle('sheet'); side.scrollTop = 0; };
+
 step('Ready');
+const ST = readState();
 camera.position.copy(VIEWS.field.p).multiplyScalar(1.6); controls.target.copy(VIEWS.field.t);
-await setDay('040');
-select(null);
+if (ST.mode) mode = ST.mode;
+flagsOn = ST.flags; $('t-flags').setAttribute('aria-pressed', String(flagsOn)); setCams(ST.cams);
+if (!ST.pivot) { pivot.visible = false; $('t-pivot').setAttribute('aria-pressed', 'false'); camTag.hidden = towerTag.hidden = true; }
+await setDay(ST.day || '040');
+if (ST.plot) select(ST.plot, false); else select(null);
+if (ST.flag) { const f = FL?.dates[day]?.flags.filter((q) => q.crop)[ST.flag - 1]; if (f) selectFlag(f.id); }
 requestAnimationFrame(frame);
 $('loading').style.opacity = 0; setTimeout(() => $('loading').remove(), 650);
-flyTo(VIEWS.over.p, VIEWS.over.t, reduced ? 0 : 3200); pressView('v-over');
+if (ST.cam) { anim = null; camera.position.set(ST.cam[0], ST.cam[1], ST.cam[2]); controls.target.set(ST.cam[3], ST.cam[4], ST.cam[5]); pressView(null); }
+else { flyTo(VIEWS.over.p, VIEWS.over.t, reduced ? 0 : 3200); pressView('v-over'); }
+booted = true; saveState();
+// after the first view is up: the sharper day-40 photo, then the next date
+setTimeout(() => { loadHires(); const i = DAYS.indexOf(day); if (i + 1 < DAYS.length) dayData(DAYS[i + 1]); }, 400);
 </script>

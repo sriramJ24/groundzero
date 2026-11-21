@@ -37,7 +37,7 @@ From the landing page, **Real row scan** opens a coarse 3D view of an actual cor
 
 ## 3D field section
 
-`viewer/field3d/` is a standalone three.js page showing a real corn field rebuilt from public drone photos (UAV3DCrop, CC BY 4.0): a detailed 23 × 25 m section around six hand-measured plots on 12 survey dates (bare soil to full height), the whole surveyed field (about 57 × 67 m) on day 40, a crop-height layer measured from the photos with an accuracy check against hand measurements, a modeled center pivot with PivotCam and a simulated pass, and a guided tour. Serve the folder with any static server (for example `python3 -m http.server` inside it). How it is built: [pipelines/field_model/README.md](pipelines/field_model/README.md).
+`viewer/field3d/` is a standalone three.js page showing a real corn field rebuilt from public drone photos (UAV3DCrop, CC BY 4.0): a detailed 23 × 25 m section around six hand-measured plots on 12 survey dates (bare soil to full height), the whole surveyed field (about 57 × 67 m) on day 40, a crop-height layer measured from the photos with an accuracy check against hand measurements, a modeled center pivot with PivotCam and a simulated pass, crop flags (patches with more soil showing or paler than the rest on the same date, from photo colors only) with a greenness layer for every date, a Share view link that reopens the same date, layers and camera, a phone layout, and a guided tour. Serve the folder with any static server (for example `python3 -m http.server` inside it). How it is built: [pipelines/field_model/README.md](pipelines/field_model/README.md).
 
 ## Camera to dashboard
 

@@ -15,4 +15,15 @@ python build_surface.py --scene <scene dir> --fused fused --out web
 python export_viewer_data.py --scene <scene dir> --web web --measurements <dir with ground_plots.csv> --out ../../viewer/field3d
 ```
 
-What is real: the field surface, its colors, and the plot measurements. What is modeled: the pivot span, towers and PivotCam. Greenness is photo color, not a health score; crop condition is not assessed. The photos come from a drone 12 to 18 m up, not from PivotCam.
+Season, height and whole field (about 1.3 GB more downloaded: 6 nadir photos + depth maps per date, and 18 more Day040 nadir photos):
+
+4. `season.py` builds, for each of the 12 dates, a 4 cm surface (median across the straight-down photos of each photo's highest point per cell) and a 2 cm photo texture; crop height = surface minus the Day007 bare-soil surface. It checks photo height (95th percentile within 1 m of each plot centre, chosen before looking at results) against the tape-measured canopy height: 66 plot visits, typical miss 16 cm, photos 15.5 cm lower on average, R² 0.95 across the season. Within a single date the plots differ by only about 10 cm and the photos do not rank them reliably.
+5. `wide.py` builds the whole surveyed field on day 40 the same way from 34 nadir photos, at 10 cm surface cells and 4 cm texture pixels.
+6. `export_splat.py` converts an OpenSplat Gaussian-splat PLY (trained on CPU from the Day040 photos) into the compact `.splat` layout for the viewer.
+
+```bash
+python season.py --season <dir with D007/, D019/, ...> --measurements <dir> --out ../../viewer/field3d
+python wide.py --scene <Day040 dir> --select wide_sel.json --out ../../viewer/field3d
+```
+
+What is real: the field surface, its colors, and the plot measurements. What is modeled: the pivot span, towers and PivotCam, and the pivot pass (a simulation). Greenness is photo color, not a health score; crop condition is not assessed. The photos come from a drone 12 to 18 m up, not from PivotCam.

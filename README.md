@@ -35,6 +35,10 @@ backend/.venv/bin/python backend/tests/smoke_test.py
 
 From the landing page, **Real row scan** opens a coarse 3D view of an actual corn row built only from photographs (47 frames of public CropDriveSD side-camera footage). The row is split into five sections; click one to see its original photos, times and how much of it was placed in 3D, and to flag it for an in-person check. Crop condition is shown as "not assessed" because no condition method has been built or tested. Scale is not measured. How it is made: [pipelines/crop_view/README.md](pipelines/crop_view/README.md).
 
+## 3D field section
+
+`viewer/field3d/` is a standalone three.js page showing a 23 × 25 m section of a real corn field rebuilt from 72 public drone photos (UAV3DCrop, CC BY 4.0), with a modeled center pivot and PivotCam, six hand-measured plots, and a photo-greenness layer. Serve the folder with any static server (for example `python3 -m http.server` inside it). How it is built: [pipelines/field_model/README.md](pipelines/field_model/README.md).
+
 ## Camera to dashboard
 
 The camera sends a raw JPEG with its metadata in `X-*` headers. Full details are in [shared/capture-contract.md](shared/capture-contract.md).

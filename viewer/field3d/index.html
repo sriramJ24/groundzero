@@ -1,0 +1,365 @@
+<title>GroundZero Field Section</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the field fills the screen; one panel on the right holds the plot list and plot evidence; controls float bottom-left. */
+:root {
+  --bg: #0f1411; --panel: #161d18; --panel-2: #1d2620; --line: #2b362e;
+  --fg: #e9ede6; --muted: #9aa79c; --accent: #8fbf3c; --lead: #4d7c0f; --wheat: #d9b86c; --soil: #8a6a4a; --flag: #e8903a;
+  --sky-top: #9fb8c9; --sky-bottom: #e7e1d2;
+  --display: "Newsreader", Georgia, "Times New Roman", serif;
+  --ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --bg: #eef0ea; --panel: #fbfcf8; --panel-2: #f1f4ec; --line: #d7ddd0; --fg: #1b231d; --muted: #5d6b60; --accent: #4d7c0f; --lead: #4d7c0f; --wheat: #9a7420; --soil: #7a5a3a; --flag: #c0661a; color-scheme: light; } }
+:root[data-theme="light"] { --bg: #eef0ea; --panel: #fbfcf8; --panel-2: #f1f4ec; --line: #d7ddd0; --fg: #1b231d; --muted: #5d6b60; --accent: #4d7c0f; --lead: #4d7c0f; --wheat: #9a7420; --soil: #7a5a3a; --flag: #c0661a; color-scheme: light; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--ui); font-size: 14px; overflow: hidden; }
+#app { position: fixed; inset: 0; display: grid; grid-template-columns: 1fr 360px; }
+#stage { position: relative; min-width: 0; overflow: hidden; }
+#stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+aside { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; padding-block: 18px 24px; padding-left: 18px; padding-right: max(18px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 16px; }
+h1 { font-family: var(--display); font-weight: 500; font-size: 26px; line-height: 1.1; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 500; font-size: 21px; margin: 0; }
+.eyebrow { font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.sub { color: var(--muted); font-size: 12.5px; line-height: 1.45; margin: 4px 0 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 10.5px; font-weight: 600; letter-spacing: .04em; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.chip.real { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.chip.model { color: var(--wheat); border-color: color-mix(in srgb, var(--wheat) 45%, transparent); }
+.list { display: grid; gap: 6px; }
+.plot-btn { display: grid; grid-template-columns: 52px 1fr auto; gap: 10px; align-items: center; text-align: left; width: 100%; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 6px 10px 6px 6px; color: var(--fg); font: inherit; cursor: pointer; }
+.plot-btn:hover, .plot-btn.on { border-color: var(--accent); }
+.plot-btn img { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; display: block; }
+.plot-btn .n { font-weight: 600; font-size: 13px; }
+.plot-btn .m { color: var(--muted); font-size: 11.5px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+.stat .v { font-family: var(--mono); font-size: 20px; }
+.stat .k { font-size: 11px; color: var(--muted); }
+.stat .s { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+.evidence { display: grid; gap: 8px; }
+.evidence img { width: 100%; border-radius: 10px; display: block; cursor: zoom-in; border: 1px solid var(--line); }
+.note { font-size: 12px; line-height: 1.5; color: var(--muted); background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.note b { color: var(--fg); font-weight: 600; }
+button.lnk { background: none; border: 0; color: var(--accent); font: inherit; font-size: 12.5px; padding: 0; cursor: pointer; text-align: left; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.controls { position: absolute; left: max(14px, env(safe-area-inset-left, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); display: flex; flex-wrap: wrap; gap: 8px; max-width: calc(100% - 28px); }
+.seg { display: flex; background: color-mix(in srgb, var(--panel) 88%, transparent); border: 1px solid var(--line); border-radius: 999px; padding: 3px; backdrop-filter: blur(6px); }
+.seg button { background: none; border: 0; color: var(--muted); font: inherit; font-size: 12.5px; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--fg); }
+.legend { position: absolute; left: max(14px, env(safe-area-inset-left, 0px)); bottom: calc(62px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--panel) 92%, transparent); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; width: 250px; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+.ramp { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #b8743a, #d9c46a, #6fae3a, #1f6b2a); margin: 6px 0 4px; }
+.labels { position: absolute; inset: 0; pointer-events: none; }
+.tag { position: absolute; transform: translate(-50%, -100%); pointer-events: auto; background: color-mix(in srgb, var(--panel) 90%, transparent); color: var(--fg); border: 1px solid var(--line); border-radius: 999px; font: 600 11.5px var(--ui); padding: 3px 9px; white-space: nowrap; cursor: pointer; }
+.tag.on { background: var(--accent); color: #0f1411; border-color: var(--accent); }
+.tag.hw { cursor: default; color: var(--wheat); font-weight: 500; }
+.hint { position: absolute; right: 14px; top: 12px; font-size: 11.5px; color: #26302a; background: rgba(255,255,255,.6); padding: 4px 10px; border-radius: 999px; }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
+dialog { border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 14px; padding: 0; max-width: min(1100px, 94vw); }
+dialog::backdrop { background: rgba(0,0,0,.7); }
+dialog img { display: block; max-width: 100%; max-height: 78vh; }
+dialog .cap { padding: 10px 14px; font-size: 12px; color: var(--muted); display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+dialog .cap button { background: var(--panel-2); border: 1px solid var(--line); color: var(--fg); border-radius: 999px; padding: 5px 12px; font: inherit; cursor: pointer; }
+@media (max-width: 820px) {
+  #app { grid-template-columns: 1fr; grid-template-rows: 58vh 1fr; }
+  aside { border-left: 0; border-top: 1px solid var(--line); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .legend { display: none; }
+}
+</style>
+
+<div id="app">
+  <div id="stage">
+    <div id="loading">Loading the field model…</div>
+    <div class="labels" id="labels"></div>
+    <div class="hint" id="hint">Drag to orbit · scroll or pinch to zoom · right-drag to pan</div>
+    <div class="legend" id="legend" hidden>
+      <div style="color:var(--fg);font-weight:600">Photo greenness</div>
+      <div class="ramp"></div>
+      <div style="display:flex;justify-content:space-between"><span>lighter / yellower</span><span>deeper green</span></div>
+      <div style="margin-top:6px">Color measured from the photos in 0.5 m squares. Orange squares are the lightest 3% of this section. It shows where to look, not what is wrong.</div>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Field coloring">
+        <button id="m-photo" aria-pressed="true">Photo</button>
+        <button id="m-green" aria-pressed="false">Greenness</button>
+      </div>
+      <div class="seg" role="group" aria-label="View">
+        <button id="v-over" aria-pressed="true">Overview</button>
+        <button id="v-cam" aria-pressed="false">PivotCam view</button>
+      </div>
+      <div class="seg"><button id="t-pivot" aria-pressed="true">Pivot</button></div>
+    </div>
+  </div>
+  <aside id="side"></aside>
+</div>
+<dialog id="dlg"><img id="dlg-img" alt=""><div class="cap"><span id="dlg-cap"></span><button id="dlg-close">Close</button></div></dialog>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const $ = (id) => document.getElementById(id);
+const S = await (await fetch('scene.json')).json();
+const G = S.grid;
+const cx = (G.x0 + G.x1) / 2, cy = (G.y0 + G.y1) / 2;
+// scene frame: X east, Y up (0 = estimated ground), Z south
+const toV = (x, y, z) => new THREE.Vector3(x - cx, z - S.ground_z, -(y - cy));
+const W = G.x1 - G.x0, D = G.y1 - G.y0;
+
+const stage = $('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const sky = new THREE.Color('#c9d6dc');
+scene.background = sky;
+scene.fog = new THREE.Fog(sky, 60, 170);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 600);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = 2; controls.maxDistance = 120;
+
+scene.add(new THREE.HemisphereLight('#f4f1e6', '#5b4a35', 1.9));
+const sun = new THREE.DirectionalLight('#fff4dc', 1.5);
+sun.position.set(-18, 30, 12); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, near: 1, far: 90 });
+scene.add(sun);
+
+// ---------- ground outside the reconstructed section (plain soil, not data) ----------
+const ground = new THREE.Mesh(new THREE.CircleGeometry(220, 64), new THREE.MeshLambertMaterial({ color: '#9c8466' }));
+ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; ground.receiveShadow = true; scene.add(ground);
+
+// ---------- the reconstructed canopy (real data) ----------
+const HJ = await (await fetch('field_heights.json')).json();
+const raw = Uint8Array.from(atob(HJ.uint16_le_base64), (c) => c.charCodeAt(0));
+const H16 = new Uint16Array(raw.buffer);
+const H = Float32Array.from(H16, (q) => HJ.offset_m + q * HJ.scale_m);
+const geo = new THREE.PlaneGeometry(W, D, G.nx - 1, G.ny - 1);
+geo.rotateX(-Math.PI / 2);
+const pos = geo.attributes.position;
+// PlaneGeometry rows run north->south after rotation (z from -D/2 to +D/2); DSM row 0 is the south edge
+for (let r = 0; r < G.ny; r++) for (let c = 0; c < G.nx; c++) {
+  const i = r * G.nx + c; const src = (G.ny - 1 - r) * G.nx + c;
+  pos.setY(i, H[src] - S.ground_z);
+}
+geo.computeVertexNormals();
+const texLoader = new THREE.TextureLoader();
+const small = await texLoader.loadAsync('field_texture_small.jpg');
+small.colorSpace = THREE.SRGBColorSpace;
+const fieldMat = new THREE.MeshStandardMaterial({ map: small, roughness: 1, metalness: 0 });
+const field = new THREE.Mesh(geo, fieldMat);
+field.receiveShadow = true; scene.add(field);
+texLoader.load('field_texture.jpg', (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); fieldMat.map = t; fieldMat.needsUpdate = true; });
+
+// cut edges: walls from the canopy edge down to the ground, so the section reads as a block of crop
+function edgeWall(points) {
+  const g = new THREE.BufferGeometry(); const v = []; const col = [];
+  const top = new THREE.Color('#3e5a24'), bot = new THREE.Color('#5a4630');
+  for (let i = 0; i < points.length - 1; i++) {
+    const [a, b] = [points[i], points[i + 1]];
+    const q = [[a.x, a.y, a.z, top], [b.x, b.y, b.z, top], [b.x, 0, b.z, bot], [a.x, a.y, a.z, top], [b.x, 0, b.z, bot], [a.x, 0, a.z, bot]];
+    for (const [x, y, z, c] of q) { v.push(x, y, z); col.push(c.r, c.g, c.b); }
+  }
+  g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  return new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+}
+const edge = (from, n, step) => Array.from({ length: n }, (_, k) => new THREE.Vector3().fromBufferAttribute(pos, from + k * step));
+scene.add(edgeWall(edge(0, G.nx, 1)));
+scene.add(edgeWall(edge((G.ny - 1) * G.nx, G.nx, 1)));
+scene.add(edgeWall(edge(0, G.ny, G.nx)));
+scene.add(edgeWall(edge(G.nx - 1, G.ny, G.nx)));
+
+// ---------- greenness overlay (photo color measurement) ----------
+const gr = S.greenness;
+const ramp = [[0, '#b8743a'], [0.35, '#d9c46a'], [0.7, '#6fae3a'], [1, '#1f6b2a']].map(([t, c]) => [t, new THREE.Color(c)]);
+const rampAt = (t) => { for (let i = 1; i < ramp.length; i++) if (t <= ramp[i][0]) { const [a, ca] = ramp[i - 1], [b, cb] = ramp[i]; return ca.clone().lerp(cb, (t - a) / (b - a)); } return ramp[ramp.length - 1][1].clone(); };
+const gcv = document.createElement('canvas'); gcv.width = gr.cols * 8; gcv.height = gr.rows * 8;
+const gctx = gcv.getContext('2d');
+const low = new Set(gr.low_cells);
+for (let r = 0; r < gr.rows; r++) for (let c = 0; c < gr.cols; c++) {
+  const v = gr.values[r * gr.cols + c]; const t = Math.min(1, Math.max(0, (v - gr.p5) / (gr.p95 - gr.p5)));
+  gctx.fillStyle = '#' + rampAt(t).getHexString(); gctx.fillRect(c * 8, r * 8, 8, 8);
+}
+gctx.strokeStyle = '#ff7a1a'; gctx.lineWidth = 2;
+for (const i of low) { const r = Math.floor(i / gr.cols), c = i % gr.cols; gctx.strokeRect(c * 8 + 1, r * 8 + 1, 6, 6); }
+const gTex = new THREE.CanvasTexture(gcv); gTex.colorSpace = THREE.SRGBColorSpace; gTex.magFilter = THREE.NearestFilter;
+// the greenness grid covers whole 0.5 m cells from the north-west corner
+gTex.repeat.set(W / (gr.cols * gr.cell_m), D / (gr.rows * gr.cell_m)); gTex.offset.set(0, 1 - D / (gr.rows * gr.cell_m));
+
+// ---------- center pivot span with PivotCam (illustrative hardware model, not reconstructed) ----------
+const pivot = new THREE.Group(); scene.add(pivot);
+const steel = new THREE.MeshStandardMaterial({ color: '#b9c0c4', metalness: 0.75, roughness: 0.38 });
+const darkSteel = new THREE.MeshStandardMaterial({ color: '#6f777b', metalness: 0.6, roughness: 0.5 });
+const rubber = new THREE.MeshStandardMaterial({ color: '#202322', roughness: 0.9 });
+const PIPE_Y = 4.3, SPAN_Z = -3.0, X_A = -26, X_B = 26;
+const tube = (a, b, r, mat = steel, seg = 8) => {
+  const d = new THREE.Vector3().subVectors(b, a); const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d.length(), seg), mat);
+  m.position.copy(a).addScaledVector(d, 0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); m.castShadow = true; return m;
+};
+pivot.add(tube(new THREE.Vector3(X_A, PIPE_Y, SPAN_Z), new THREE.Vector3(X_B, PIPE_Y, SPAN_Z), 0.11, steel, 18));
+// truss: underslung rods and V bracing
+const sag = 1.5, nB = 16;
+const trussPt = (t) => new THREE.Vector3(X_A + (X_B - X_A) * t, PIPE_Y - sag * Math.sin(Math.PI * t), SPAN_Z);
+for (const dz of [-0.55, 0.55]) {
+  for (let i = 0; i < nB; i++) {
+    const a = trussPt(i / nB).add(new THREE.Vector3(0, 0, dz)), b = trussPt((i + 1) / nB).add(new THREE.Vector3(0, 0, dz));
+    pivot.add(tube(a, b, 0.018, darkSteel, 6));
+    const top = new THREE.Vector3(X_A + (X_B - X_A) * (i + 0.5) / nB, PIPE_Y, SPAN_Z);
+    pivot.add(tube(a, top, 0.014, darkSteel, 5)); pivot.add(tube(b, top, 0.014, darkSteel, 5));
+  }
+}
+// drop hoses and sprinkler pads every 2.4 m
+for (let x = X_A + 1.2; x < X_B; x += 2.4) {
+  const top = new THREE.Vector3(x, PIPE_Y - 0.08, SPAN_Z), bot = new THREE.Vector3(x, 2.35, SPAN_Z);
+  pivot.add(tube(top, bot, 0.012, rubber, 5));
+  const head = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.04, 0.06, 12), new THREE.MeshStandardMaterial({ color: '#2e5d8c', roughness: 0.6 }));
+  head.position.copy(bot); pivot.add(head);
+  const w = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.12, 8), darkSteel); w.position.copy(bot).add(new THREE.Vector3(0, 0.12, 0)); pivot.add(w);
+}
+// drive towers at both ends
+function tower(x) {
+  const g = new THREE.Group();
+  const apex = new THREE.Vector3(x, PIPE_Y - 0.1, SPAN_Z);
+  for (const dz of [-2.1, 2.1]) {
+    const foot = new THREE.Vector3(x, 0.75, SPAN_Z + dz);
+    g.add(tube(apex, foot, 0.06, steel, 10));
+    g.add(tube(new THREE.Vector3(x, 2.3, SPAN_Z + dz * 0.48), new THREE.Vector3(x, 2.3, SPAN_Z - dz * 0.48), 0.035, steel));
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.72, 0.42, 28), rubber); wheel.rotation.x = Math.PI / 2; wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(x, 0.72, SPAN_Z + dz); wheel.castShadow = true; g.add(wheel);
+    for (let k = 0; k < 14; k++) { const lug = new THREE.Mesh(new THREE.BoxGeometry(0.43, 0.08, 0.16), rubber); const a = k / 14 * Math.PI * 2; lug.position.set(x, 0.72 + Math.cos(a) * 0.72, SPAN_Z + dz + Math.sin(a) * 0.72); lug.rotation.x = -a; g.add(lug); }
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.46, 18), steel); hub.rotation.z = Math.PI / 2; hub.position.set(x, 0.72, SPAN_Z + dz); g.add(hub);
+  }
+  g.add(tube(new THREE.Vector3(x, 0.75, SPAN_Z - 2.1), new THREE.Vector3(x, 0.75, SPAN_Z + 2.1), 0.07, steel, 10));
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.35), new THREE.MeshStandardMaterial({ color: '#c9c3ad', roughness: 0.6 })); box.position.set(x + 0.32, 2.0, SPAN_Z); box.castShadow = true; g.add(box);
+  return g;
+}
+pivot.add(tower(X_A)); pivot.add(tower(X_B));
+// PivotCam V1: enclosure clamped to the pipe, camera tilted 35 degrees below horizontal, looking south
+const CAM_X = 1.5;
+const camGroup = new THREE.Group(); camGroup.position.set(CAM_X, PIPE_Y, SPAN_Z); pivot.add(camGroup);
+const enclosure = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.24), new THREE.MeshStandardMaterial({ color: '#2b2f30', roughness: 0.55, metalness: 0.2 }));
+enclosure.position.set(0, -0.24, 0.08); enclosure.castShadow = true; camGroup.add(enclosure);
+const lid = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.02, 0.25), new THREE.MeshStandardMaterial({ color: '#3a3f40', roughness: 0.5 })); lid.position.set(0, -0.13, 0.08); camGroup.add(lid);
+for (const dx of [-0.1, 0.1]) { const u = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.012, 8, 20, Math.PI), steel); u.rotation.y = Math.PI / 2; u.position.set(dx, 0, 0); u.rotation.z = Math.PI; camGroup.add(u); }
+const TILT = THREE.MathUtils.degToRad(35);
+const head = new THREE.Group(); head.position.set(0, -0.4, 0.22); head.rotation.x = -TILT; camGroup.add(head);
+const camBody = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.07), new THREE.MeshStandardMaterial({ color: '#1c1f20', roughness: 0.4 })); head.add(camBody);
+const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.03, 20), new THREE.MeshStandardMaterial({ color: '#0a0c10', metalness: 0.4, roughness: 0.2 })); lens.rotation.x = Math.PI / 2; lens.position.z = 0.05; head.add(lens);
+camGroup.add(tube(new THREE.Vector3(0, -0.34, 0.12), new THREE.Vector3(0, -0.4, 0.2), 0.008, steel));
+// camera view footprint on the canopy (Camera Module 3: about 66 x 41 degrees)
+const camWorld = new THREE.Vector3(CAM_X, PIPE_Y - 0.4, SPAN_Z + 0.22);
+const fwd = new THREE.Vector3(0, -Math.sin(TILT), Math.cos(TILT));
+const up = new THREE.Vector3(0, Math.cos(TILT), Math.sin(TILT)), right = new THREE.Vector3(1, 0, 0);
+const hf = Math.tan(THREE.MathUtils.degToRad(33)), vf = Math.tan(THREE.MathUtils.degToRad(20.5));
+const canopyY = 1.82;
+const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => { const d = fwd.clone().addScaledVector(right, a * hf).addScaledVector(up, b * vf).normalize(); const t = (canopyY - camWorld.y) / d.y; return camWorld.clone().addScaledVector(d, t); });
+const fr = new THREE.BufferGeometry().setFromPoints(corners.flatMap((c) => [camWorld, c]).concat([...corners, corners[0]].flatMap((c, i, arr) => i < arr.length - 1 ? [c, arr[i + 1]] : [])));
+pivot.add(new THREE.LineSegments(fr, new THREE.LineBasicMaterial({ color: '#ffd27a', transparent: true, opacity: 0.85 })));
+const fp = new THREE.Shape(corners.map((c) => new THREE.Vector2(c.x, -c.z)));
+const fpMesh = new THREE.Mesh(new THREE.ShapeGeometry(fp), new THREE.MeshBasicMaterial({ color: '#ffd27a', transparent: true, opacity: 0.16, depthWrite: false }));
+fpMesh.rotation.x = -Math.PI / 2; fpMesh.position.y = canopyY + 0.05; pivot.add(fpMesh);
+
+// ---------- measured plots ----------
+const plotMarks = {};
+for (const p of S.plots) {
+  const base = toV(p.x, p.y, p.canopy_top_z);
+  const g = new THREE.Group(); g.position.copy(base);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(1.35, 1.5, 48), new THREE.MeshBasicMaterial({ color: '#f3efe2', transparent: true, opacity: 0.9, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.12; g.add(ring);
+  const stake = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.4, 8), new THREE.MeshStandardMaterial({ color: '#f3efe2' })); stake.position.y = 0.7; g.add(stake);
+  scene.add(g); plotMarks[p.id] = { g, ring, top: base.clone().add(new THREE.Vector3(0, 1.5, 0)) };
+}
+
+// ---------- labels ----------
+const labels = $('labels'); const tags = [];
+function addTag(text, v3, cls, onClick) { const el = document.createElement(onClick ? 'button' : 'div'); el.className = 'tag ' + (cls || ''); el.textContent = text; if (onClick) el.onclick = onClick; labels.append(el); tags.push({ el, v3 }); return el; }
+for (const p of S.plots) plotMarks[p.id].tag = addTag(p.id.replace('Corn-', 'Plot '), plotMarks[p.id].top, '', () => select(p.id));
+const camTag = addTag('PivotCam V1 (35° down)', camWorld.clone().add(new THREE.Vector3(0, 0.55, 0)), 'hw');
+const towerTag = addTag('Drive tower · modeled', new THREE.Vector3(X_A, PIPE_Y + 0.6, SPAN_Z), 'hw');
+
+// ---------- side panel ----------
+let selected = null;
+const side = $('side');
+const fmt = (v, d = 0) => v == null ? '—' : v.toFixed(d);
+const gRank = (v) => { const s = [...gr.values].sort((a, b) => a - b); let i = 0; while (i < s.length && s[i] < v) i++; return Math.round(100 * i / s.length); };
+function overview() {
+  side.innerHTML = `
+    <div><div class="eyebrow">GroundZero · field section</div><h1>Corn, ${W.toFixed(0)} × ${D.toFixed(0)} m</h1>
+    <p class="sub">A real corn field rebuilt in 3D from ${S.fusion.photos} drone photos taken at the 45° angle PivotCam would see, ${S.day.replace('Day0', 'day ')} of the 2025 season. Six plots were measured by hand on the same day.</p></div>
+    <div class="chips"><span class="chip real">REAL PHOTOS + 3D</span><span class="chip real">HAND-MEASURED PLOTS</span><span class="chip model">PIVOT IS A MODEL</span></div>
+    <div><div class="eyebrow" style="margin-bottom:8px">Measured plots</div><div class="list">${S.plots.map((p) => `
+      <button class="plot-btn" data-id="${p.id}"><img src="${p.crop}" alt=""><span><span class="n">${p.id.replace('Corn-', 'Plot ')}</span><br><span class="m">Height <span class="num">${fmt(p.canopy_height_cm)}</span> cm · LAI <span class="num">${fmt(p.lai, 2)}</span></span></span><span class="m num">${gRank(p.greenness)}%</span></button>`).join('')}</div>
+    <p class="sub">Right column: how green the plot looks in the photos, as a percentile of this section.</p></div>
+    <div class="note"><b>What is real.</b> The field surface and its colors come from the photos and the dataset's photogrammetric depth maps (${(S.fusion.fused_points / 1e6).toFixed(1)} million fused points, 2 cm). Plot height and leaf area index were measured on the ground. <b>What is modeled.</b> The pivot span, towers and PivotCam are drawn to show where the hardware would sit. They are not part of the scan. <b>Not assessed.</b> No crop-stress method has been tested yet, so nothing here is a health score.</div>
+    <p class="sub">Source: <a style="color:var(--accent)" href="${S.source.url}" target="_blank" rel="noreferrer">UAV3DCrop</a>, ${S.source.authors}, ${S.source.license}. ${S.source.camera}.</p>`;
+  side.querySelectorAll('.plot-btn').forEach((b) => b.onclick = () => select(b.dataset.id));
+}
+function detail(p) {
+  const rank = gRank(p.greenness);
+  side.innerHTML = `
+    <button class="lnk" id="back">← All plots</button>
+    <div><div class="eyebrow">Measured plot</div><h2>${p.id.replace('Corn-', 'Plot ')}</h2>
+    <p class="sub">${S.day.replace('Day0', 'Day ')} · 2025 season · position <span class="num">${p.x.toFixed(1)} m E, ${p.y.toFixed(1)} m N</span> of the survey origin</p></div>
+    <div class="stats">
+      <div class="stat"><div class="k">Canopy height</div><div class="v">${fmt(p.canopy_height_cm)}<span style="font-size:12px"> cm</span></div><div class="s">Hand-measured, mean of 5 readings</div></div>
+      <div class="stat"><div class="k">Leaf area index</div><div class="v">${fmt(p.lai, 2)}</div><div class="s">LAI-2200C canopy analyzer, m² leaf per m² ground</div></div>
+      <div class="stat"><div class="k">Photo greenness</div><div class="v">${rank}<span style="font-size:12px">th pct</span></div><div class="s">Within this section, 1.5 m around the plot</div></div>
+      <div class="stat"><div class="k">Crop condition</div><div class="v" style="font-size:16px;font-family:var(--ui)">Not assessed</div><div class="s">No tested method yet</div></div>
+    </div>
+    <div class="evidence"><div class="eyebrow">Evidence</div>
+      <img src="${p.crop}" alt="Top-down photo of ${p.id}, 3 by 3 metres" data-cap="${p.id}: 3 × 3 m from the orthophoto, 1 cm per pixel">
+      <img src="${p.photo}" alt="Original drone photo ${p.photo_id}" data-cap="Original photo ${p.photo_id}, taken straight down from about 18 m (downscaled). The camera was ${p.photo_offset_m} m from the plot.">
+    </div>
+    <div class="note">${rank < 25 ? '<b>Lighter than most of this section.</b> In the photos this plot is less green than three quarters of the section. That can come from leaf angle, light or soil showing through, so it is a reason to look, not a finding.' : 'Color in the photos is within the usual range for this section.'}</div>`;
+  $('back').onclick = () => select(null);
+  side.querySelectorAll('.evidence img').forEach((im) => im.onclick = () => { $('dlg-img').src = im.src; $('dlg-cap').textContent = im.dataset.cap; $('dlg').showModal(); });
+}
+$('dlg-close').onclick = () => $('dlg').close();
+$('dlg').onclick = (e) => { if (e.target === $('dlg')) $('dlg').close(); };
+function select(id) {
+  selected = id;
+  for (const [k, m] of Object.entries(plotMarks)) { m.tag.classList.toggle('on', k === id); m.ring.material.color.set(k === id ? '#8fbf3c' : '#f3efe2'); }
+  if (id) { const p = S.plots.find((q) => q.id === id); detail(p); flyTo(plotMarks[id].top.clone().add(new THREE.Vector3(5, 7, 9)), plotMarks[id].top.clone().add(new THREE.Vector3(0, -1.2, 0))); }
+  else overview();
+}
+
+// ---------- views ----------
+let anim = null;
+function flyTo(p, t, ms = 1100) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) ms = 0;
+  anim = { p0: camera.position.clone(), t0: controls.target.clone(), p, t, start: performance.now(), ms };
+}
+const OVER = { p: new THREE.Vector3(22, 22, 32), t: new THREE.Vector3(0, 1, 0) };
+camera.position.copy(OVER.p); controls.target.copy(OVER.t);
+const setPressed = (on, off) => { $(on).setAttribute('aria-pressed', 'true'); $(off).setAttribute('aria-pressed', 'false'); };
+$('v-over').onclick = () => { setPressed('v-over', 'v-cam'); camera.fov = 40; camera.updateProjectionMatrix(); flyTo(OVER.p, OVER.t); };
+$('v-cam').onclick = () => { setPressed('v-cam', 'v-over'); pivot.visible = true; $('t-pivot').setAttribute('aria-pressed', 'true'); camera.fov = 41; camera.updateProjectionMatrix(); flyTo(camWorld.clone().addScaledVector(fwd, 0.15), camWorld.clone().addScaledVector(fwd, 6)); };
+$('m-photo').onclick = () => { setPressed('m-photo', 'm-green'); fieldMat.map = fieldMat.userData.photo || fieldMat.map; fieldMat.needsUpdate = true; $('legend').hidden = true; };
+$('m-green').onclick = () => { setPressed('m-green', 'm-photo'); fieldMat.userData.photo = fieldMat.map; fieldMat.map = gTex; fieldMat.needsUpdate = true; $('legend').hidden = false; };
+$('t-pivot').onclick = () => { pivot.visible = !pivot.visible; $('t-pivot').setAttribute('aria-pressed', String(pivot.visible)); camTag.hidden = towerTag.hidden = !pivot.visible; };
+renderer.domElement.addEventListener('pointerdown', () => { anim = null; $('hint').hidden = true; });
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('dlg').open) select(null); });
+
+function resize() { const r = stage.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+const v = new THREE.Vector3();
+function frame(now) {
+  if (anim) { const k = anim.ms ? Math.min(1, (now - anim.start) / anim.ms) : 1; const e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2; camera.position.lerpVectors(anim.p0, anim.p, e); controls.target.lerpVectors(anim.t0, anim.t, e); if (k >= 1) anim = null; }
+  controls.update(); renderer.render(scene, camera);
+  const r = renderer.domElement.getBoundingClientRect();
+  for (const t of tags) { v.copy(t.v3).project(camera); const vis = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05; t.el.style.display = vis && !t.el.hidden ? '' : 'none'; t.el.style.left = ((v.x + 1) / 2 * r.width) + 'px'; t.el.style.top = ((1 - v.y) / 2 * r.height) + 'px'; }
+  requestAnimationFrame(frame);
+}
+$('loading').remove();
+select(null);
+requestAnimationFrame(frame);
+</script>

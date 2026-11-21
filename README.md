@@ -31,6 +31,14 @@ backend/.venv/bin/python backend/tests/smoke_test.py
 5. **Action Center.** Ranked suggestions, each with the evidence behind it.
 6. **Model Evidence.** What we actually measured, including what didn't work.
 
+## Real row scan
+
+From the landing page, **Real row scan** opens a coarse 3D view of an actual corn row built only from photographs (47 frames of public CropDriveSD side-camera footage). The row is split into five sections; click one to see its original photos, times and how much of it was placed in 3D, and to flag it for an in-person check. Crop condition is shown as "not assessed" because no condition method has been built or tested. Scale is not measured. How it is made: [pipelines/crop_view/README.md](pipelines/crop_view/README.md).
+
+## 3D field section
+
+`viewer/field3d/` is a standalone three.js page showing a real corn field rebuilt from public drone photos (UAV3DCrop, CC BY 4.0): a detailed 23 × 25 m section around six hand-measured plots on 12 survey dates (bare soil to full height), the whole surveyed field (about 57 × 67 m) on day 40, a crop-height layer measured from the photos with an accuracy check against hand measurements, a modeled center pivot with PivotCam and a simulated pass, crop flags (patches with more soil showing or paler than the rest on the same date, from photo colors only) with a greenness layer for every date, a Share view link that reopens the same date, layers and camera, a phone layout, and a guided tour. Serve the folder with any static server (for example `python3 -m http.server` inside it). How it is built: [pipelines/field_model/README.md](pipelines/field_model/README.md).
+
 ## Camera to dashboard
 
 The camera sends a raw JPEG with its metadata in `X-*` headers. Full details are in [shared/capture-contract.md](shared/capture-contract.md).
@@ -57,6 +65,7 @@ The current firmware in [hardware/](hardware/) saves to an SD card and does not 
 | Satellite NDVI | Real | Sentinel-2 |
 | Health and risk scores | Simple rules | `frontend/src/data/scoring.ts` |
 | Login | Not built | The "Log in" button says so |
+| Row scan photos and 3D shape | Real photos; shape derived from them, approximate, no measured scale | CropDriveSD (CC BY 4.0), `pipelines/crop_view/` |
 
 ## What we measured
 
@@ -82,6 +91,8 @@ More in [biobase/README.md](biobase/README.md).
 
 ## Layout
 
+Working on this repo with an agent? Start with [CLAUDE.md](CLAUDE.md) (same text as [AGENTS.md](AGENTS.md)).
+
 ```
 frontend/   React + TypeScript, React Three Fiber for the 3D views
 backend/    FastAPI + SQLite: photo uploads, review, live updates
@@ -89,6 +100,7 @@ hardware/   ESP32-CAM firmware and model trainers
 pipelines/  Scripts that pulled and evaluated the public data
 biobase/    Biobase challenge entry
 shared/     Camera contract and demo data generator
+docs/       Decisions, Pi capture format (draft), Cotal setup, GPU job template
 ```
 
 ## Credits

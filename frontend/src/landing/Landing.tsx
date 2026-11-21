@@ -131,6 +131,7 @@ export default function Landing({ initialFieldId, onOpen }: LandingProps) {
           <p className="mt-2 text-[15px] text-[#f3efe4]/85">Select a field or zone to open your workspace</p>
           <div className="mt-4 flex flex-wrap items-center gap-2.5">
             <button onClick={() => onOpen(field.id, null)} className="rounded-full bg-[#b9d6bf] px-6 py-3 text-[14.5px] font-semibold text-[#0f1a14] shadow-lg shadow-black/25 transition-colors hover:bg-[#cfe6d3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f3efe4]">Open {field.name.replace('Demo ', '')}</button>
+            <a href="#/scan" className="rounded-full border border-[#f3efe4]/50 bg-[#0d1512]/55 px-5 py-3 text-[14px] font-medium text-[#f3efe4] backdrop-blur-sm hover:bg-[#0d1512]/80">Real row scan</a>
             {zone && <button onClick={() => onOpen(field.id, zone)} className="rounded-full border border-[#f3efe4]/50 bg-[#0d1512]/55 px-5 py-3 text-[14px] font-medium text-[#f3efe4] backdrop-blur-sm hover:bg-[#0d1512]/80">Open zone {zone}</button>}
             <span className="text-[12.5px] text-[#f3efe4]/75">{field.name} · {field.crop} · {field.area_acres} ac{hoverZone && !zone ? ` · zone ${hoverZone}` : ''}</span>
           </div>

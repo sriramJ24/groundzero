@@ -1,0 +1,5 @@
+Photos in this folder: CropDriveSD, Sainath Reddy Gummi and Kundana Reddy Gummi (2026).
+https://huggingface.co/datasets/Sainath001/CropDriveSD  (revision v1.1, commit 6ea9902f48c600fda6aa9005211a14f97015ed6c)
+License: CC BY 4.0, https://creativecommons.org/licenses/by/4.0/
+Run 2026-10-11_fieldA_run2, side RGB camera, movie frames 2940-3078 (every third frame).
+Changes: frames decoded from the released H.264 video and re-encoded as JPEG (quality 85). scan.json holds geometry derived from these photos.

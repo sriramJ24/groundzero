@@ -14,6 +14,7 @@ import CaptureModal from './components/CaptureModal'
 import Simulator from './panels/Simulator'
 import Landing from './landing/Landing'
 import { FIXTURES } from './data/api'
+import RowScan from './scan/RowScan'
 
 const NAV: { id: ViewId; name: string; icon: string }[] = [
   { id: 'overview', name: 'Digital Twin', icon: 'M3 7l9-4 9 4-9 4-9-4zm0 5l9 4 9-4M3 17l9 4 9-4' },
@@ -28,8 +29,9 @@ const NAV: { id: ViewId; name: string; icon: string }[] = [
 
 // Hash routes: "#/" is the farm overview, "#/field/<fieldId>" the workspace, "#/field/<fieldId>/zone/<zoneId>" with a zone selected.
 // Hash routing works unchanged behind the backend, the Vite dev server and static hosting, and keeps back/forward working.
-interface Route { page: 'landing' | 'workspace'; fieldId: string | null; zoneId: string | null }
+interface Route { page: 'landing' | 'workspace' | 'scan'; fieldId: string | null; zoneId: string | null }
 function parseRoute(): Route {
+  if (window.location.hash.startsWith('#/scan')) return { page: 'scan', fieldId: null, zoneId: null }
   const m = window.location.hash.match(/^#\/field\/([^/]+)(?:\/zone\/([^/]+))?/)
   if (m && FIXTURES[decodeURIComponent(m[1])]) return { page: 'workspace', fieldId: decodeURIComponent(m[1]), zoneId: m[2] ? decodeURIComponent(m[2]) : null }
   return { page: 'landing', fieldId: null, zoneId: null }
@@ -43,6 +45,7 @@ export default function App() {
     window.addEventListener('hashchange', on)
     return () => window.removeEventListener('hashchange', on)
   }, [])
+  if (route.page === 'scan') return <RowScan />
   if (route.page === 'landing') {
     return <Landing initialFieldId={useStore.getState().loadedFieldId ?? lastField()} onOpen={(fieldId, zoneId) => { window.location.hash = `#/field/${encodeURIComponent(fieldId)}${zoneId ? `/zone/${encodeURIComponent(zoneId)}` : ''}` }} />
   }

@@ -31,6 +31,10 @@ backend/.venv/bin/python backend/tests/smoke_test.py
 5. **Action Center.** Ranked suggestions, each with the evidence behind it.
 6. **Model Evidence.** What we actually measured, including what didn't work.
 
+## Real row scan
+
+From the landing page, **Real row scan** opens a coarse 3D view of an actual corn row built only from photographs (47 frames of public CropDriveSD side-camera footage). The row is split into five sections; click one to see its original photos, times and how much of it was placed in 3D, and to flag it for an in-person check. Crop condition is shown as "not assessed" because no condition method has been built or tested. Scale is not measured. How it is made: [pipelines/crop_view/README.md](pipelines/crop_view/README.md).
+
 ## Camera to dashboard
 
 The camera sends a raw JPEG with its metadata in `X-*` headers. Full details are in [shared/capture-contract.md](shared/capture-contract.md).
@@ -57,6 +61,7 @@ The current firmware in [hardware/](hardware/) saves to an SD card and does not 
 | Satellite NDVI | Real | Sentinel-2 |
 | Health and risk scores | Simple rules | `frontend/src/data/scoring.ts` |
 | Login | Not built | The "Log in" button says so |
+| Row scan photos and 3D shape | Real photos; shape derived from them, approximate, no measured scale | CropDriveSD (CC BY 4.0), `pipelines/crop_view/` |
 
 ## What we measured
 

@@ -1,0 +1,26 @@
+{
+  "format_version": "0.1-draft",
+  "capture_id": "20261121T154210123Z_000412",
+  "device_id": "sample-cam-01",
+  "field_id": "sample-field",
+  "time": {
+    "utc": "2026-11-21T15:42:10.123Z",
+    "source": "unsynced",
+    "boot_id": "00000000-0000-4000-8000-000000000001",
+    "monotonic_ms": 31415926
+  },
+  "camera": {
+    "tilt_deg": null,
+    "tilt_source": "none",
+    "roll_deg": null,
+    "heading_deg": null,
+    "height_m": null,
+    "model": "camera-module-3",
+    "lens": "standard",
+    "resolution": [
+      4608,
+      2592
+    ]
+  },
+  "gps": null
+}

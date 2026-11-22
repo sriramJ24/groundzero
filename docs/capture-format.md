@@ -1,76 +1,53 @@
 # Capture format (Pi → cloud)
 
-> **DRAFT.** Written by Sriram's side as a starting point. Tushar owns the Pi and should propose changes in a PR against this file. Nothing here is final until Tushar approves it, and the decision is recorded in [decisions.md](decisions.md).
+> **DRAFT for joint review.** The Pi and cloud sides build against this contract once approved and recorded in [decisions.md](decisions.md).
 
-Each capture is **one photo plus one JSON file with the same name**:
+Each capture is one JPEG plus one UTF-8 JSON file with the same stem:
 
-```
+```text
 <device_id>/<YYYY-MM-DD>/<capture_id>.jpg
 <device_id>/<YYYY-MM-DD>/<capture_id>.json
 ```
 
-`capture_id` is `<UTC time as YYYYMMDDTHHMMSSmmmZ>_<sequence>`, for example `20261121T154210123Z_000412`. The sequence counter increases on every capture and never resets except when the SD card is wiped, so captures sort correctly even if the clock is wrong.
+The date directory and the timestamp portion of `capture_id` use the device's UTC wall clock at capture, even when it is unsynced. Keep both paths stable across retries. The ID format is `<YYYYMMDDTHHMMSSmmmZ>_<sequence>`, such as `20261121T154210123Z_000412`. Write the sequence as a decimal integer padded to at least six digits. Persist the counter across reboots and advance it for every capture. Gaps are allowed. If the counter state is lost, provision a new unique `device_id` before capturing again.
+
+For capture order on one device, compare the sequence suffix **numerically**, including across date directories. The filename's timestamp can sort out of order if the clock jumps. Use monotonic time for elapsed intervals within one boot only. Unsynced wall times cannot establish order across devices.
 
 ## Photo
 
-- JPEG, full sensor resolution from the Camera Module 3 (4608 × 2592), quality 90 or higher.
-- No resizing, cropping or filters on the Pi. The cloud needs the original.
-- Keep the EXIF the camera writes (exposure, gain, focal length).
+- Save a full-resolution Camera Module 3 JPEG (4608 × 2592 pixels), quality 90 or higher, without resizing, cropping or filters on the Pi.
+- Preserve camera-generated EXIF when present. Use the JSON sidecar for ingestion metadata.
 
 ## JSON metadata
+
+The [sample JPEG](samples/20261121T154210123Z_000412.jpg) and [sample JSON](samples/20261121T154210123Z_000412.json) are a synthetic ingestion fixture. The image is a generated test pattern. Identifiers and timing are fixture values. GPS, orientation and mounting height are unmeasured. Pivot metadata is omitted to exercise the same contract for a tractor or bench capture.
 
 ```json
 {
   "format_version": "0.1-draft",
   "capture_id": "20261121T154210123Z_000412",
-  "device_id": "pivotcam-01",
-  "field_id": "field-A",
-
+  "device_id": "sample-cam-01",
+  "field_id": "sample-field",
   "time": {
     "utc": "2026-11-21T15:42:10.123Z",
-    "source": "gps",
+    "source": "unsynced",
+    "boot_id": "00000000-0000-4000-8000-000000000001",
     "monotonic_ms": 31415926
   },
-
-  "pivot": {
-    "angle_deg": 137.4,
-    "angle_source": "imu",
-    "camera_radius_m": 182.0,
-    "pass_id": "2026-11-21_pass01"
-  },
-
   "camera": {
-    "tilt_deg": 35.0,
-    "tilt_source": "imu",
-    "roll_deg": 0.8,
-    "heading_deg": 227.4,
-    "height_m": 3.8,
+    "tilt_deg": null,
+    "tilt_source": "none",
+    "roll_deg": null,
+    "heading_deg": null,
+    "height_m": null,
     "model": "camera-module-3",
     "lens": "standard",
-    "resolution": [4608, 2592],
-    "exposure_us": 2000,
-    "analog_gain": 1.0,
-    "focus": "auto"
+    "resolution": [
+      4608,
+      2592
+    ]
   },
-
-  "gps": {
-    "lat": 38.5449,
-    "lon": -121.7405,
-    "alt_m": 18.2,
-    "fix": "3d",
-    "hdop": 0.9,
-    "source": "pi-gps-hat"
-  },
-
-  "pivot_center": {
-    "lat": 38.5461,
-    "lon": -121.7390,
-    "source": "configured"
-  },
-
-  "upload": {
-    "attempt": 1
-  }
+  "gps": null
 }
 ```
 
@@ -78,37 +55,37 @@ Each capture is **one photo plus one JSON file with the same name**:
 
 | Field | Required | Notes |
 |---|---|---|
-| `format_version`, `capture_id`, `device_id`, `field_id` | Yes | |
-| `time.utc` | Yes | ISO 8601 UTC with milliseconds. |
-| `time.source` | Yes | `gps`, `ntp` or `rtc`. If the clock was never synced, use `unsynced`; the cloud then orders by `capture_id` sequence. |
-| `time.monotonic_ms` | Yes | Milliseconds since boot. Lets the cloud space photos even when the wall clock jumps. |
-| `pivot.angle_deg` | Yes, or `null` | Arm angle from north, clockwise, 0–360. `null` if not measured. |
-| `pivot.angle_source` | Yes | `imu`, `encoder`, `gps` (computed from GPS and `pivot_center`) or `none`. |
-| `pivot.camera_radius_m` | Yes | Distance from pivot center to the camera along the arm. Set at install. |
-| `pivot.pass_id` | Optional | Groups photos from one sweep of the arm. |
-| `camera.tilt_deg` | Yes | Degrees down from horizontal. From the IMU if there is one, otherwise the installed value with `tilt_source: "installed"`. |
-| `camera.roll_deg`, `heading_deg` | Optional | `null` if no IMU. |
-| `camera.height_m` | Yes | Camera height above ground, set at install. |
-| `camera.resolution` | Yes | `[width, height]` of the saved JPEG. |
-| `camera.exposure_us`, `analog_gain`, `focus` | Optional | Helps the cloud reject blurred or dark frames. |
-| `gps` | Optional | The whole object is `null` if there's no GPS. Never fill it with the pivot center or a guess. |
-| `pivot_center` | Yes | Set once at install. `source` is `configured` or `surveyed`. |
-| `upload.attempt` | Optional | Retry count, for debugging flaky links. |
+| `format_version`, `capture_id`, `device_id`, `field_id` | Yes | Use the draft version shown above. IDs are nonempty strings. `capture_id` matches both file stems, and `device_id` matches the device directory. |
+| `time.utc`, `time.source` | Yes | UTC in ISO 8601 with milliseconds. Sources are `gps`, `ntp`, `rtc`, or `unsynced`. Use `unsynced` when the clock has no trusted time source. |
+| `time.boot_id`, `time.monotonic_ms` | Yes | Stable boot identifier and nonnegative integer milliseconds since boot when the frame was captured. |
+| `pivot`, `pivot_center` | Optional | Omit for mounts where pivot geometry does not apply. For pivot captures, include each value when available, or use `null` for missing measurements. |
+| `pivot.angle_deg`, `pivot.angle_source` | If `pivot` is an object | Angle is clockwise from true north in [0, 360), or `null`. Source is `imu`, `encoder`, `gps`, or `none`. Use `none` with a null angle. GPS-derived angle requires a valid fix and known pivot center. |
+| `pivot.camera_radius_m`, `pivot.pass_id` | Optional | Radius is the measured horizontal distance from the pivot center to the camera in meters. Pass ID groups frames from one sweep. |
+| `pivot_center.lat`, `pivot_center.lon`, `pivot_center.source` | If `pivot_center` is an object | WGS 84 decimal degrees and a source of `configured` or `surveyed`. If the location is unknown, use `null` for the whole object or omit it. |
+| `camera.model`, `camera.lens`, `camera.resolution` | Yes | Initial camera is `camera-module-3` with the `standard` lens. Resolution is `[width, height]` of the saved JPEG. |
+| `camera.tilt_deg`, `camera.tilt_source` | Yes | Tilt is positive down from horizontal. Source is `installed` for a measured fixed angle, `imu` for a per-frame estimate, or `none` for `null` tilt. The planned 35° angle is not a measurement. |
+| `camera.roll_deg`, `camera.heading_deg`, `camera.height_m` | Optional | Degrees for roll and heading, meters above ground for height. Positive roll is clockwise looking forward along the optical axis. Heading is clockwise from true north in [0, 360). Use `null` when unmeasured. |
+| `camera.exposure_us`, `camera.analog_gain`, `camera.focus` | Optional | Copy reported exposure in microseconds, analog gain, and focus mode when available. |
+| `gps` | Yes, nullable | Use `null` without a valid fix. With a fix, include `lat`, `lon` (WGS 84 decimal degrees), `fix` (`2d` or `3d`), and `source`. Include `alt_m` and `hdop` when reported. |
+| `upload.attempt` | Optional | If emitted, this is the initial attempt number recorded when the sidecar is written. Track later retries in transfer logs. |
 
-Unknown or unmeasured values are `null`, never a made-up default. Extra fields are allowed; the cloud ignores what it doesn't know.
+Use `null` for explicitly unmeasured values. Consumers should accept omitted optional fields and ignore unknown fields.
 
 ## Upload
 
-To be decided with Tushar. Proposal: the Pi writes to the SD card first, then uploads the `.jpg` and `.json` pair to cloud storage when it has a connection. The JSON is uploaded **after** the photo, so a JSON in storage always means its photo is complete. Nothing is deleted from the SD card until the cloud confirms both files.
+1. Finish writing both local files to the SD card before queueing the pair. Keep the capture ID, paths and file contents stable across retries.
+2. When known Wi-Fi is available, upload the JPEG first. Wait for the storage service to confirm that the complete JPEG was stored before publishing the JSON.
+3. Ingestion uses the JSON as the ready marker, verifies its matching JPEG is present and readable, and deduplicates by `(device_id, capture_id)`. Repeating an upload with unchanged contents is safe. An existing key with different contents is a conflict to investigate.
+4. Keep both local originals until the cloud confirms receipt of the pair. The specific storage API and acknowledgement mechanism are integration details for the Pi and cloud implementations.
 
 ## Relation to the older contract
 
-[shared/capture-contract.md](../shared/capture-contract.md) describes the hackathon ESP32 camera posting to the local dashboard backend. This file replaces it for the Pi. The backend endpoint will be updated once this format is agreed.
+[shared/capture-contract.md](../shared/capture-contract.md) describes the hackathon ESP32 camera posting to the local dashboard backend. This contract applies to the Pi. The backend can implement Pi ingestion after review.
 
-## Open questions for Tushar
+## Proposed answers to the five open questions
 
-1. Which sensor gives the pivot angle: an IMU on the mount, a GPS module, or the pivot controller?
-2. Is there a GPS module on the Pi, and which one?
-3. Capture trigger: every N seconds, or every N degrees of arm travel?
-4. What connection is at the field (Wi-Fi from the farm, LTE, or upload when the Pi comes back)?
-5. Is the tilt fixed, or will the "6-axis gimbal" move it? If it moves, tilt must come from the IMU on every frame.
+1. **Pivot angle.** No source is selected for the first build. Record `null` and source `none` until a sensor or controller source is validated.
+2. **GPS.** No module is selected. Record `gps: null` until a valid fix is available.
+3. **Trigger.** Start with a configurable time interval. Set the cadence after testing capture throughput, vehicle speed and image overlap. Revisit angle triggering once angle telemetry is available.
+4. **Connectivity.** Record locally during the pass and transfer when the Pi reaches known Wi-Fi. Field Wi-Fi availability and LTE are unconfirmed.
+5. **Tilt.** Use a fixed mount for the first build. Record the measured installed angle when available. A moving mount would need a timestamped per-frame orientation estimate. No gimbal is selected.

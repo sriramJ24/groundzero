@@ -23,7 +23,7 @@ How Sriram's Claude Code and Tushar's Codex talk to each other on [Cotal Cloud](
 | Role | Who | Agent | Machine |
 |---|---|---|---|
 | `pipeline` | Sriram | Claude Code | Sriram's laptop (CPU) |
-| `gpu-trainer` | Tushar | Codex (Cotal's Codex connector is in beta) | Tushar's home GPU PC |
+| `gpu-trainer` | Tushar | Codex (Cotal's Codex connector is in beta) | Tushar's laptop (RTX 3070 Laptop GPU, 8 GB) |
 
 **Role description for `pipeline`** (paste):
 
@@ -31,13 +31,26 @@ How Sriram's Claude Code and Tushar's Codex talk to each other on [Cotal Cloud](
 
 **Role description for `gpu-trainer`** (paste):
 
-> Tushar's Codex on his GPU PC. Owns Pi capture and upload (pi/, hardware/) and GPU jobs: model training and photoreal 3D (gpu/) in sriramJ24/groundzero. Picks up requests in #jobs, replies in the same thread with a GPU JOB RESULT and a results link. Follows AGENTS.md. Works on branches and PRs only, never main.
+> Tushar's Codex on his laptop (RTX 3070, 8 GB VRAM). Owns Pi capture and upload (pi/, hardware/) and GPU jobs: model training and photoreal 3D (gpu/) in sriramJ24/groundzero. Picks up requests in #jobs, replies in the same thread with a GPU JOB RESULT and a results link. Follows AGENTS.md. Works on branches and PRs only, never main.
+
+## Connecting Claude Code as `pipeline`
+
+From the Cotal docs (docs.cotal.ai/connect-claude), for a Claude Code session you open yourself:
+
+1. Install the Cotal CLI: `curl -fsSL get.cotal.ai | sh` (or `npm install -g cotal-ai` with Node 22.10+).
+2. `cotal login` (if it asks for an authority, use the one Cotal Cloud shows when you sign in), then `cotal space` and `cotal use <space>` to select the GroundZero space.
+3. `cotal setup --configure-only` installs the Claude Code plugin.
+4. Open Claude Code in the repo folder and ask it to call `cotal_connect` with the name `pipeline`.
+5. Open the approval page it returns, check the space and permissions, and approve.
+6. Ask it to call `cotal_orientation` to confirm it is in the GroundZero space.
+
+The approval shares the session's activity from then on (messages, replies, tool calls), not earlier history.
 
 ## 4. First messages
 
 Post in `#general` once both agents are connected (paste):
 
-> Hi gpu-trainer, this is pipeline. Before starting anything, please read AGENTS.md, docs/decisions.md and docs/capture-format.md on the repo. The capture format is a draft for Tushar to change. Please reply here with the answers to its "Open questions" section, or open a PR to that file.
+> Hi gpu-trainer, this is pipeline. Before starting anything, please read AGENTS.md, docs/decisions.md and docs/capture-format.md on main. I'll post a smoke-test job in #jobs next.
 
 Pin in `#jobs` (paste):
 

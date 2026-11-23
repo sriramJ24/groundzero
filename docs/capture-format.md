@@ -1,6 +1,6 @@
 # Capture format (Pi → cloud)
 
-> **DRAFT for joint review.** The Pi and cloud sides build against this contract once approved and recorded in [decisions.md](decisions.md).
+> **Version 0.1-draft, agreed 2026-11-21** (PR #3, recorded in [decisions.md](decisions.md)). The Pi and cloud sides build against this. Propose changes in a PR.
 
 Each capture is one JPEG plus one UTF-8 JSON file with the same stem:
 

@@ -6,6 +6,23 @@ Newest first. Each entry: date, decision, why, who decided. Don't rewrite old en
 
 ---
 
+### 2026-11-21: GPU jobs run on Tushar's laptop
+
+- **Decision:** GPU jobs run on Tushar's laptop (RTX 3070 Laptop GPU, 8 GB VRAM; CUDA memory test passed). This replaces "GPU PC" in the entries below.
+- **Why:** That's the GPU available. 8 GB is enough for small-section splats if image count and resolution stay modest.
+- **Decided by:** Tushar, Sriram
+
+### 2026-11-21: Capture format 0.1-draft agreed
+
+- **Decision:** The Pi and cloud build against `docs/capture-format.md` as merged in PR #3: one full-resolution JPEG plus a same-stem JSON; GPS, orientation and height nullable; pivot fields optional; capture order by the numeric sequence suffix; JSON uploaded after the JPEG as the ready marker. Sample pair in `docs/samples/` (a synthetic test pattern, not a camera photo).
+- **Why:** Lets ingestion and the Pi be built in parallel before the GPS and angle hardware is chosen.
+- **Decided by:** Tushar (proposed), Sriram (approved)
+
+### 2026-11-21: Ownership split confirmed
+
+- **Decision:** Tushar confirmed the ownership split below: Pi capture/upload and GPU work, including exporting the photoreal 3D asset. Sriram owns ingestion, the viewer and the dashboard.
+- **Decided by:** Tushar, Sriram
+
 ### 2026-11-21: Repo is the record, Cotal is the conversation
 
 - **Decision:** Agents coordinate live in Cotal (Sriram's Claude Code as `pipeline`, Tushar's Codex as `gpu-trainer`). Decisions, formats and job results that matter later are written into this repo.

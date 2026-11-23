@@ -32,32 +32,33 @@ The photo and its metadata format are defined in [docs/capture-format.md](docs/c
 
 | Area | Owner | Agent | Folders |
 |---|---|---|---|
-| Pi capture and upload | Tushar (TMRmehta) | Codex, `gpu-trainer` | `pi/`, `hardware/` (older ESP32 work) |
-| GPU jobs: model training, photoreal 3D (splats) | Tushar | Codex, `gpu-trainer` | `gpu/` |
-| Cloud processing | Sriram (sriramJ24) | Claude Code, `pipeline` | `pipelines/`, `backend/` |
-| 3D viewer and dashboard | Sriram | Claude Code, `pipeline` | `viewer/`, `frontend/` |
+| Pi capture and upload | Tushar (TMRmehta) | Codex | `pi/`, `hardware/` (older ESP32 work) |
+| GPU jobs: model training, photoreal 3D (splats) | Tushar | Codex | `gpu/` |
+| Cloud processing | Sriram (sriramJ24) | Claude Code | `pipelines/`, `backend/` |
+| 3D viewer and dashboard | Sriram | Claude Code | `viewer/`, `frontend/` |
 | Shared contracts and decisions | Both | Both | `docs/`, `shared/` |
 
 Rules:
 
-- Work only in your own folders. If you need a change in someone else's folder, ask in Cotal or open an issue; don't edit it.
+- Work only in your own folders. If you need a change in someone else's folder, ask in a handoff (see `handoffs/`) or open an issue; don't edit it.
 - `docs/` and `shared/` are shared. A change there needs a PR that the other person approves.
 - Create `pi/` or `gpu/` when the first code for it lands.
 
 ## Branches and PRs
 
 - Never push to `main`. Every change goes on a branch and through a PR.
-- Branch names: `pi/<topic>`, `gpu/<topic>`, `cloud/<topic>`, `viewer/<topic>`, `docs/<topic>`. Agent-created branches may use the agent's default name.
+- Branch names: `pi/<topic>`, `gpu/<topic>`, `cloud/<topic>`, `viewer/<topic>`, `docs/<topic>`, `handoff/<name>`. Agent-created branches may use the agent's default name.
 - One topic per PR. Say in the description what changed, how you checked it, and what is still simulated.
 - The owner of the area merges. A PR that touches `docs/` or `shared/` needs the other person's approval first.
-- Don't commit large files. Photos, datasets, model weights and 3D outputs over about 50 MB go in a GitHub release or a Google Drive link, and the PR or job request links to them.
+- Don't commit large files. Photos, datasets, model weights and 3D outputs over about 50 MB go in a GitHub release or a Google Drive link, and the PR or handoff links to them.
 
-## Talking to each other (Cotal)
+## Passing work to each other (handoff files)
 
-The agents coordinate in Cotal. Sriram's Claude Code is `pipeline`; Tushar's Codex is `gpu-trainer`. Channels and roles are in [docs/cotal-setup.md](docs/cotal-setup.md).
+Sriram's Claude Code and Tushar's Codex pass work through handoff files in [handoffs/](handoffs/README.md), sent through normal PRs. The repo is the record.
 
-- Ask for GPU work in `#jobs` using [docs/templates/gpu-job-request.md](docs/templates/gpu-job-request.md). Reply in the same thread with the results link when done.
-- **Cotal keeps only 7 days of history.** Anything decided in Cotal that matters after a week goes in [docs/decisions.md](docs/decisions.md) in a PR. The repo is the record, Cotal is the conversation.
+- To ask the other side for something (GPU work, a Pi change, a question that blocks you), copy [handoffs/TEMPLATE.md](handoffs/TEMPLATE.md) to a new file and open a PR, as `handoffs/README.md` describes.
+- At the start of every session, `git pull` on `main` and check `handoffs/` for files with `Status: open` addressed to your person. Those are waiting on you.
+- When you finish, fill in the Result section of that same file and open a PR. Put anything decided that matters later in [docs/decisions.md](docs/decisions.md) in the same PR.
 - Before starting work, read `docs/decisions.md` and `docs/capture-format.md`.
 
 ## Standing rules

@@ -114,7 +114,7 @@ def pair_points(A, B, K, size):
 
 cams = load_pass(a.pass_dir)
 a.out.mkdir(parents=True, exist_ok=True)
-allp, allc, allv, photos = [], [], [], []
+allp, allc, allv, photos, cam_pos = [], [], [], [], []
 t0 = time.time()
 npairs = 0
 for dev, seq in cams.items():
@@ -126,14 +126,14 @@ for dev, seq in cams.items():
         if np.linalg.norm(B["C"] - A["C"]) > 3:          # the tractor turned at the headland
             continue
         w, c, frac = pair_points(A, B, K, size)
-        photos.append(A["key"])
+        photos.append(A["key"]); cam_pos.append([round(float(v), 3) for v in A["C"]])
         allp.append(w); allc.append(c); allv.append(np.full(len(w), len(photos) - 1, np.int32))
         npairs += 1
         print(f"{dev} pair {A['seq']}-{B['seq']}: {len(w)} points ({frac:.0%} of pixels matched)", flush=True)
 P = np.concatenate(allp); Cc = np.concatenate(allc); V = np.concatenate(allv)
 np.savez_compressed(a.out / "points.npz", xyz=P, rgb=Cc, photo=V)
-info = dict(pass_dir=str(a.pass_dir), pairs=npairs, points=int(len(P)), photos=photos,
+info = dict(pass_dir=str(a.pass_dir), pairs=npairs, points=int(len(P)), photos=photos, camera_positions=cam_pos,
             pose_source="simulation (exact rendered poses)", pair_step=a.pair_step, work_width=a.work_width,
             seconds=round(time.time() - t0, 1))
 (a.out / "points.json").write_text(json.dumps(info, indent=1))
-print(json.dumps({k: v for k, v in info.items() if k != "photos"}))
+print(json.dumps({k: v for k, v in info.items() if k not in ("photos", "camera_positions")}))

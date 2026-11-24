@@ -9,7 +9,7 @@ Opened: 2026-11-24
 
 **Goal:** Render one simulated pass of the corn section and one of the vineyard block on the RTX 3070, so the demo pipeline (3D model, flags, dashboard) has photos to run on. Everything here is synthetic and labeled that way.
 
-**Branch / commit to start from:** `cloud/synthetic-field` at `b0b967d` (PR 6). Read `pipelines/synthetic/README.md` first.
+**Branch / commit to start from:** `main` after PR 8 merges (the field generators; PR 6 is already merged). Read `pipelines/synthetic/README.md` first.
 
 **Inputs:** none; the scripts build the scenes.
 
@@ -25,11 +25,11 @@ Opened: 2026-11-24
 5. Zip `out/corn` and `out/vineyard` (photos, `truth.json`, the `.blend`) and upload to Google Drive, shared with Sriram.
 
 **Expected outputs:**
-- `out/corn/photos/<device>/*.jpg + .json`: 230 pairs. `out/vineyard/photos/<device>/*.jpg + .json`: 396 pairs.
+- `out/corn/photos/<device>/*.jpg + .json`: 230 pairs. `out/vineyard/photos/<device>/*.jpg + .json`: 540 pairs.
 - Drive link(s) to the zips.
 - Seconds per frame for each field, total time, GPU used, scale and samples used.
 
-**Done when:** both zips are on Drive with every photo present (230 and 396 JPEGs), and three random photos from each open and look like crops, not black or noisy frames.
+**Done when:** both zips are on Drive with every photo present (230 and 540 JPEGs), and three random photos from each open and look like crops, not black or noisy frames.
 
 **Limits:** stop after 3 hours and send what finished, plus where it stopped. Don't change the scripts; if something breaks, set Status to `blocked` with the error. Nothing paid.
 

@@ -36,7 +36,8 @@ ROW_GAP, VINE_GAP, POST_GAP = 2.5, 1.5, 6.0
 NROWS = 12
 ROW_X = [-SECTION / 2 + ROW_GAP / 2 + i * ROW_GAP for i in range(NROWS)]
 CORDON_Z, CANOPY_TOP = 0.9, 1.9
-CAM_H, CAM_TILT, STEP_M = 1.6, 10.0, 1.0
+CAM_H, CAM_TILT, STEP_M = 1.6, 10.0, 0.5
+PATH_Y = 11.0     # the tractor photographs the middle 22 m of each row (all planted problems lie inside)
 VINE_Y = [-SECTION / 2 + VINE_GAP / 2 + j * VINE_GAP for j in range(int(SECTION / VINE_GAP))]
 PROBLEMS = [
     dict(id="V1", kind="yellowing leaves", row=3, vines=[5, 6, 7]),
@@ -325,7 +326,7 @@ scene.collection.objects.link(cam); scene.camera = cam
 ALLEYS = [ROW_X[i] + ROW_GAP / 2 for i in range(0, NROWS, 2)]   # every other alley: rows i and i+1
 shots = []
 for ai, ax in enumerate(ALLEYS):
-    ys = [-SECTION / 2 - 1 + k * STEP_M for k in range(int((SECTION + 2) / STEP_M) + 1)]
+    ys = [-PATH_Y + k * STEP_M for k in range(int(2 * PATH_Y / STEP_M) + 1)]
     if ai % 2:
         ys = ys[::-1]          # the tractor turns at the headland and comes back
     for y in ys:
@@ -379,7 +380,7 @@ for i, s in enumerate(shots):
 truth = dict(note="Planted problems in the simulated vineyard block. Use only to score flags on simulated data.",
              frame="block: x east, y north (m), origin at block centre", section_m=SECTION, row_gap_m=ROW_GAP,
              vine_gap_m=VINE_GAP, row_x_m=ROW_X, vine_y_m=VINE_Y, canopy_m=[CORDON_Z, CANOPY_TOP], problems=PROBLEMS,
-             vines=counts, cameras=dict(mount="tractor", height_m=CAM_H, tilt_deg=CAM_TILT, step_m=STEP_M, alleys_x_m=ALLEYS),
+             vines=counts, cameras=dict(mount="tractor", height_m=CAM_H, tilt_deg=CAM_TILT, step_m=STEP_M, alleys_x_m=ALLEYS, path_y_m=[-PATH_Y, PATH_Y]),
              photos=len(shots))
 (a.out / "truth.json").write_text(json.dumps(truth, indent=2))
 bpy.ops.wm.save_as_mainfile(filepath=str((a.out / "vineyard_block.blend").resolve()))

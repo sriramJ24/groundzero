@@ -10,7 +10,7 @@ Run with Blender's Python module (pip install bpy==5.3.0 numpy):
   python corn_field.py --out out/corn --scale 0.25 --samples 16 --every 10   # quick CPU check
   python corn_field.py --out out/corn --scale 1 --samples 64 --gpu             # full pass (handoff to GPU)
 """
-import argparse, json, math, random, uuid
+import argparse, json, math, random, sys, time, uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -27,13 +27,13 @@ ap.add_argument("--only", type=str, default="", help="comma list of photo indexe
 ap.add_argument("--gpu", action="store_true")
 ap.add_argument("--seed", type=int, default=7)
 ap.add_argument("--no-render", action="store_true", help="write metadata and the .blend only")
-a = ap.parse_args()
+a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else None)   # works under `blender -b -P` too
 rng = random.Random(a.seed)
 
 # ---------------- field layout (metres; section centred on origin, x east, y north, z up) ----------------
 SECTION = 30.0
 ROW_GAP, PLANT_GAP = 0.76, 0.20
-PLANT_H = 2.0                      # mid-season, before tassel
+PLANT_H = 1.7                      # around V12, before tassel
 PIVOT_CENTER = Vector((-160.0, 0.0, 0.0))   # section sits 145-175 m out along the span
 CAM_RADII = [146.0, 156.0, 166.0]           # three Pi units on the span, ~10 m apart
 CAM_H, CAM_TILT = 4.0, 35.0                 # metres above ground on the pipe, degrees down
@@ -102,6 +102,23 @@ def material(name, color, rough=0.6, sss=0.0, noise_mix=0.15, translucent=0.25):
     nt.links.new(ramp.outputs["Color"], mix.inputs["A"])
     nt.links.new(tex.outputs["Color"], mix.inputs["B"])
     leaf_col = mix.outputs["Result"]
+    # pale midrib down the centre of each leaf (u = 0.5)
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    sep = nt.nodes.new("ShaderNodeSeparateXYZ")
+    nt.links.new(tc.outputs["UV"], sep.inputs["Vector"])
+    dist = nt.nodes.new("ShaderNodeMath"); dist.operation = "SUBTRACT"; dist.inputs[1].default_value = 0.5
+    nt.links.new(sep.outputs["X"], dist.inputs[0])
+    ab = nt.nodes.new("ShaderNodeMath"); ab.operation = "ABSOLUTE"
+    nt.links.new(dist.outputs[0], ab.inputs[0])
+    rib = nt.nodes.new("ShaderNodeMapRange")
+    rib.inputs["From Min"].default_value = 0.0; rib.inputs["From Max"].default_value = 0.06
+    rib.inputs["To Min"].default_value = 0.55; rib.inputs["To Max"].default_value = 0.0
+    nt.links.new(ab.outputs[0], rib.inputs["Value"])
+    m2 = nt.nodes.new("ShaderNodeMix"); m2.data_type = "RGBA"; m2.blend_type = "SCREEN"
+    m2.inputs["B"].default_value = (0.25, 0.32, 0.12, 1)
+    nt.links.new(rib.outputs["Result"], m2.inputs["Factor"])
+    nt.links.new(leaf_col, m2.inputs["A"])
+    leaf_col = m2.outputs["Result"]
     nt.links.new(leaf_col, bsdf.inputs["Base Color"])
     if translucent > 0:
         tr = nt.nodes.new("ShaderNodeBsdfTranslucent")
@@ -153,24 +170,33 @@ def add_ground():
     scene.collection.objects.link(ob)
 
 # ---------------- plant meshes ----------------
-def leaf_strip(bm, base, yaw, length, width, rise, droop, twist):
-    """A leaf: a ribbon that leaves the stalk upward, arches out and droops at the tip."""
-    n = 10
+UV = {}   # vertex -> (u across the leaf, v along it); applied when the mesh is finished
+
+def leaf_strip(bm, base, yaw, length, width, rise, droop, twist, fold=0.25, wave=0.012):
+    """A corn leaf: a ribbon folded along its midrib (a shallow V), leaving the stalk upward, arching out
+    and drooping at the tip, with a slightly wavy edge."""
+    n = 14
     prev = None
     d = Vector((math.cos(yaw), math.sin(yaw), 0))
     side = Vector((-d.y, d.x, 0))
+    ph = random.random() * 6.28
     for i in range(n + 1):
         t = i / n
         out = length * t
-        up = rise * math.sin(math.pi * 0.5 * min(1, t * 1.6)) - droop * t ** 2.2
+        up = rise * math.sin(math.pi * 0.5 * min(1, t * 1.8)) - droop * t ** 2.0
         c = base + d * out + Vector((0, 0, up))
-        w = width * math.sin(math.pi * min(0.98, 0.08 + t)) * (1 - 0.4 * t)
+        w = width * (0.35 + 0.65 * math.sin(math.pi * min(1.0, 0.15 + 0.95 * t))) * (1 - 0.85 * t ** 3)
         s = side * w / 2
         tw = Vector((0, 0, twist * t * w))
-        v1, v2 = bm.verts.new(c - s - tw), bm.verts.new(c + s + tw)
+        crease = Vector((0, 0, fold * w * (1 - t)))        # midrib sits higher than the edges
+        wv = Vector((0, 0, wave * math.sin(ph + t * 40) * min(1, t * 4)))
+        row = (bm.verts.new(c - s - tw + wv), bm.verts.new(c + crease), bm.verts.new(c + s + tw - wv))
+        for k, v in enumerate(row):
+            UV[v] = (k / 2, t)
         if prev:
-            bm.faces.new((prev[0], prev[1], v2, v1))
-        prev = (v1, v2)
+            bm.faces.new((prev[0], prev[1], row[1], row[0]))
+            bm.faces.new((prev[1], prev[2], row[2], row[1]))
+        prev = row
 
 def plant_mesh(name, h, leaf_mat, seed):
     r = random.Random(seed)
@@ -196,11 +222,16 @@ def plant_mesh(name, h, leaf_mat, seed):
         yaw = yaw0 + (math.pi if i % 2 else 0) + r.uniform(-0.5, 0.5)
         mid = 1 - abs(t - 0.45) * 1.3
         length = h * (0.30 + 0.28 * mid) * r.uniform(0.85, 1.1)
-        leaf_strip(bm, Vector((0, 0, z)), yaw, length, 0.11 * (0.6 + 0.4 * mid), rise=length * (0.38 - 0.2 * t),
-                   droop=length * r.uniform(0.55, 0.95), twist=r.uniform(-0.3, 0.3))
-    # whorl of young leaves at the top
-    for i in range(3):
-        leaf_strip(bm, Vector((0, 0, h * 0.86)), r.uniform(0, 6.28), h * 0.18, 0.05, rise=h * 0.16, droop=0.03, twist=0.2)
+        leaf_strip(bm, Vector((0, 0, z)), yaw, length * 1.25, 0.10 * (0.65 + 0.35 * mid),
+                   rise=length * (0.42 - 0.25 * t), droop=length * r.uniform(0.6, 1.0), twist=r.uniform(-0.3, 0.3))
+    # the whorl: two young leaves still rolled up at the top
+    for i in range(2):
+        leaf_strip(bm, Vector((0, 0, h * 0.84)), yaw0 + i * math.pi + r.uniform(-0.3, 0.3), h * 0.22, 0.045,
+                   rise=h * 0.2, droop=0.05, twist=0.1, fold=0.6)
+    uv = bm.loops.layers.uv.verify()
+    for f in bm.faces:
+        for loop in f.loops:
+            loop[uv].uv = UV.get(loop.vert, (0.5, 0.5))
     bm.to_mesh(me)
     me.materials.append(M_STALK)
     me.materials.append(leaf_mat)
@@ -326,14 +357,16 @@ for i, s in enumerate(shots):
                        "lens_mm": 4.74, "sensor_width_mm": 6.45, "pivot_theta_deg": round(s["theta"], 4)},
     }
     manifest.append(meta)
-    (a.out / "photos" / f"{cid}.json").write_text(json.dumps(meta, indent=2))
+    (a.out / "photos" / device).mkdir(exist_ok=True)
+    (a.out / "photos" / device / f"{cid}.json").write_text(json.dumps(meta, indent=2))
     if a.no_render or (only and i not in only) or (not only and i % a.every):
         continue
     cam.location = s["pos"]
     cam.rotation_euler = rot
-    scene.render.filepath = str((a.out / "photos" / f"{cid}.jpg").resolve())
+    scene.render.filepath = str((a.out / "photos" / device / f"{cid}.jpg").resolve())
+    t0 = time.time()
     bpy.ops.render.render(write_still=True)
-    print("rendered", i, cid, flush=True)
+    print(f"rendered {i + 1}/{len(shots)} {device}/{cid} in {time.time() - t0:.1f} s", flush=True)
 
 truth = dict(note="Planted problems in the simulated section. Use only to score flags on simulated data.",
              frame="section: x east, y north (m), origin at section centre", section_m=SECTION,

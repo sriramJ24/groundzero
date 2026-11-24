@@ -14,10 +14,12 @@ from PIL import Image
 
 import config
 import db
+import pi_ingest
 from scoring import zone_health
 
 app = FastAPI(title=config.PRODUCT_NAME)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.include_router(pi_ingest.router)
 
 ZONE_RE = re.compile(r"^[A-L](?:1[0-2]|[1-9])$")
 SAFE_RE = re.compile(r"[^A-Za-z0-9._-]")

@@ -22,7 +22,7 @@ Opened: 2026-11-24
    - (with a Blender install: `blender -b -P pipelines/synthetic/corn_field.py -- --out out/corn ...`)
    Each frame prints its render time. Check the log says it used the GPU (OptiX or CUDA), not CPU.
 3. There are 1,000 frames in all. If a frame takes more than about 9 s, use `--scale 0.4` instead of `0.5` for all three full runs, so the total stays under about 2.5 hours.
-4. Full runs (drop `--only`): corn first, then vineyard, then potato.
+4. Full runs (drop `--only`): potato first, then vineyard, then corn. Potato matters most for the demo and corn least, so if time runs short, skip corn.
 5. Zip `out/corn`, `out/vineyard` and `out/potato` (photos, `truth.json`, the `.blend`) and upload to Google Drive, shared with Sriram.
 
 **Expected outputs:**

@@ -4,8 +4,10 @@ A vine row is a wall of leaves, so instead of a top-down map each photographed r
 elevation map: along the row (y) by height (z), with colour, greenness and how solid the canopy is
 (the share of the canopy zone where leaves were measured on this face). Flags are 0.5 m stretches of a
 row face that look different from the rest of the pass:
-  - "thin or missing canopy": canopy fill far below the pass median
-  - "paler than the rest": greenness more than 3 robust SD below the pass median
+  - "thin or missing canopy": canopy fill far below the pass median (below min(median - 4 SD, 0.6 x median)),
+    or more than 2.5 robust SD below it along at least 1.5 m of the same face
+  - "paler than the rest": greenness more than 3 robust SD below the pass median, or more than 2 SD below
+    it along at least 1.5 m of the same face
 Flags are places to look, not diagnoses. With --truth (simulated passes only) they're scored against
 the planted problems.
 
@@ -92,9 +94,32 @@ def robust(v):
 
 f_med, f_sd = robust([s["fill"] for s in stats])
 g_med, g_sd = robust([s["green"] for s in stats])
+
+def sustained(soft, n=3):
+    """Blocks that sit in a run of at least n neighbouring blocks on one face that all pass the softer test."""
+    by_face = {}
+    for s in stats:
+        by_face.setdefault((s["row"], s["side"]), {})[s["b"]] = s
+    out = set()
+    for d in by_face.values():
+        run = []
+        for b in sorted(d) + [None]:
+            if b is not None and soft(d[b]) and (not run or b == run[-1] + 1):
+                run.append(b); continue
+            if len(run) >= n:
+                out |= {id(d[q]) for q in run}
+            run = [b] if b is not None and soft(d[b]) else []
+    return out
+
+
+# a block is flagged if it is far off on its own, or mildly off over at least 1.5 m of the same face
+thin_strong = lambda s: s["fill"] < min(f_med - 4 * f_sd, 0.6 * f_med)
+pale_strong = lambda s: np.isfinite(s["green"]) and s["green"] < g_med - 3 * g_sd
+thin_run = sustained(lambda s: s["fill"] < f_med - 2.5 * f_sd)
+pale_run = sustained(lambda s: np.isfinite(s["green"]) and s["green"] < g_med - 2 * g_sd)
 flags = []
-for kind, test in (("thin or missing canopy", lambda s: s["fill"] < min(f_med - 4 * f_sd, 0.6 * f_med)),
-                   ("paler than the rest", lambda s: np.isfinite(s["green"]) and s["green"] < g_med - 3 * g_sd)):
+for kind, test in (("thin or missing canopy", lambda s: thin_strong(s) or id(s) in thin_run),
+                   ("paler than the rest", lambda s: pale_strong(s) or id(s) in pale_run)):
     hit = [s for s in stats if test(s)]
     hit.sort(key=lambda s: (s["row"], s["side"], s["b"]))
     run = []

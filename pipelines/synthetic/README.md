@@ -13,7 +13,7 @@ only for the demo and for testing the pipeline, never as farm data.
 Planted problems, listed in each run's `truth.json` so flags can be scored on simulated data:
 
 - Corn: short plants (P1), pale yellow-green plants (P2), a 3.5 m gap across 3 rows (P3).
-- Potato: stunted plants (P1), yellowing plants (P2), a 3.5 m gap across 3 rows (P3).
+- Potato: stunted plants (P1), yellowing plants (P2), a gap of about 3.5 × 2.7 m where no plants came up (P3).
 - Vineyard: yellowing leaves on 3 vines (V1), thin canopy on 3 vines (V2), one missing vine (V3).
 
 Output layout matches `docs/capture-format.md`: `photos/<device_id>/<capture_id>.jpg` plus `.json`.

@@ -1,10 +1,16 @@
 # Decisions
 
-The record of decisions for GroundZero. Cotal keeps only 7 days of history, so anything decided there that still matters next week goes here, through a PR.
+The record of decisions for GroundZero. Anything decided in chat, on a call or in a handoff that still matters next week goes here, through a PR.
 
 Newest first. Each entry: date, decision, why, who decided. Don't rewrite old entries; if a decision changes, add a new one that says which entry it replaces.
 
 ---
+
+### 2026-11-23: Handoff files replace Cotal
+
+- **Decision:** The agents stop using Cotal. Sriram's Claude Code and Tushar's Codex pass work through handoff files in `handoffs/`, sent through PRs (see `handoffs/README.md`). This replaces "Repo is the record, Cotal is the conversation" below. GPU job requests now use `handoffs/TEMPLATE.md` instead of `docs/templates/gpu-job-request.md`.
+- **Why:** Cotal was hard to set up and kept timing out. Handoff files need nothing beyond git, and nothing expires.
+- **Decided by:** Sriram (Tushar confirms by approving the PR that added this)
 
 ### 2026-11-21: GPU jobs run on Tushar's laptop
 

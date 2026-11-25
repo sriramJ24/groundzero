@@ -100,7 +100,8 @@ hardware/   ESP32-CAM firmware and model trainers
 pipelines/  Scripts that pulled and evaluated the public data
 biobase/    Biobase challenge entry
 shared/     Camera contract and demo data generator
-docs/       Decisions, Pi capture format (draft), Cotal setup, GPU job template
+docs/       Decisions, Pi capture format (draft)
+handoffs/   Work passed between Sriram's and Tushar's agents (template + how-to)
 ```
 
 ## Credits

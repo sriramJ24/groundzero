@@ -38,9 +38,13 @@ xyz, rgb, ph = d["xyz"], d["rgb"].astype(np.float32), d["photo"]
 
 ri = np.abs(xyz[:, 0][:, None] - ROWS[None, :]).argmin(1)
 off = xyz[:, 0] - ROWS[ri]
-keep = (np.abs(off) < a.band) & (xyz[:, 2] > z0 - 0.15) & (xyz[:, 2] < z1 + 0.15)
-xyz, rgb, ph, ri, off = xyz[keep], rgb[keep], ph[keep], ri[keep], off[keep]
 cam_x = np.array([c[0] for c in info["camera_positions"]])
+gap = float(layout.get("row_gap_m", np.min(np.diff(np.sort(ROWS))) if len(ROWS) > 1 else 2.5))
+# only the row next to the camera's alley: rows further away are glimpsed through gaps in the near row,
+# which would make their faces look thin when they were simply not photographed
+near = np.abs(cam_x[ph] - ROWS[ri]) < 0.75 * gap
+keep = near & (np.abs(off) < a.band) & (xyz[:, 2] > z0 - 0.15) & (xyz[:, 2] < z1 + 0.15)
+xyz, rgb, ph, ri, off = xyz[keep], rgb[keep], ph[keep], ri[keep], off[keep]
 side = np.where(cam_x[ph] < ROWS[ri], "W", "E")   # the face is the side the photo was taken from
 
 y_lo = float(np.floor(xyz[:, 1].min())) if len(xyz) else -11

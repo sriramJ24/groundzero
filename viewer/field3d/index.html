@@ -50,6 +50,8 @@ h3 { font-family: var(--display); font-weight: 500; font-size: 18px; margin: 0 0
 .stat .s { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
 .evidence { display: grid; gap: 8px; }
 .evidence img { width: 100%; border-radius: 10px; display: block; cursor: zoom-in; border: 1px solid var(--line); }
+.evidence figure.ev { margin: 0 0 10px; }
+.evidence figcaption { font-size: 12px; color: var(--muted, inherit); margin-top: 4px; }
 .note { font-size: 12px; line-height: 1.5; color: var(--muted); background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
 .note b { color: var(--fg); font-weight: 600; }
 .card { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 10px; }
@@ -571,7 +573,7 @@ function detail(p) {
     <div class="card"><h3>Height through the season</h3><div class="key"><span><i style="border-color:var(--tape)"></i>Tape measure</span><span><i style="border-color:var(--photo);border-top-style:dashed"></i>From photos</span></div>${growthSVG(p.id)}</div>
     <div class="evidence"><div class="eyebrow">Evidence · day 40</div>
       <img src="${p.crop}" alt="Top-down photo of ${p.id}, 3 by 3 metres" data-cap="${p.id} on day 40: 3 × 3 m from the orthophoto, 1 cm per pixel">
-      <img src="${p.photo}" alt="Original drone photo ${p.photo_id}" data-cap="Original photo ${p.photo_id} from day 40, taken straight down from about 18 m (downscaled). The camera was ${p.photo_offset_m} m from the plot.">
+      <img src="${p.photo}" alt="Original drone photo ${p.photo_id}" data-cap="Original photo ${p.photo_id} from day 40, taken straight down (downscaled). The camera was ${p.photo_offset_m} m from the plot.">
       <p class="sub">Day 40 photo greenness: ${rank}th percentile of the section. ${rank < 25 ? 'Lighter than most of the section, which can come from leaf angle, light or soil showing through. A reason to look, not a finding.' : 'Within the usual range for the section.'}</p>
     </div>`;
   $('back').onclick = () => select(null);
@@ -615,7 +617,9 @@ function selectFlag(id) {
       <div class="stat"><div class="k">Crop condition</div><div class="v" style="font-size:16px;font-family:var(--ui)">Not assessed</div><div class="s">Cause not known from photos</div></div>
     </div>
     <div class="evidence"><div class="eyebrow">Evidence · day ${dayNum(day)}</div>
-      <img src="${f.crop}" alt="Top-down photo around flag ${n}, 3 by 3 metres" data-cap="Flag ${n} on day ${dayNum(day)}: 3 × 3 m from the orthophoto, 2 cm per pixel">
+      ${(f.photos || []).map((ph) => `<figure class="ev"><img src="${ph.file}" alt="Original photo ${ph.photo_id}, ${ph.view}, with flag ${n} outlined" data-cap="Original photo ${ph.photo_id}, day ${dayNum(day)}, ${ph.view}, camera ${ph.camera_m} m from the patch. Yellow outline: flag ${n}, placed into the photo from its map position using the camera's recorded pose."><figcaption>Original photo ${ph.photo_id} · ${ph.view}</figcaption></figure>`).join('')}
+      <figure class="ev"><img src="${f.crop}" alt="Top-down photo around flag ${n}, 3 by 3 metres" data-cap="Flag ${n} on day ${dayNum(day)}: 3 × 3 m from the orthophoto, 2 cm per pixel"><figcaption>Map view · 3 × 3 m</figcaption></figure>
+      ${f.note ? `<div class="note"><b>Checked in the photo.</b> ${f.note}</div>` : ''}
       <div class="note"><b>Why it is flagged.</b> ${(f.kind === 'open' ? FL.rules.open : FL.rules.pale).replace(/^./, (ch) => ch.toUpperCase())}. <b>What it could be.</b> ${f.kind === 'open' ? 'A thinner stand, missing or late plants, wider rows, or a shadow edge. Early in the season this is when stand gaps matter most.' : 'Leaf angle, light, residue, or plants under stress.'} Someone needs to look before anything is concluded.</div>
     </div>`;
   $('back').onclick = () => select(null);

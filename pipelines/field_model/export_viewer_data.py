@@ -71,7 +71,7 @@ def main():
         source=dict(dataset="UAV3DCrop", url="https://huggingface.co/datasets/Link-Dev/UAV3DCrop",
                     authors="Zhou, Li, Qiu, Qiao, Jia, Yang, Zhang, Yin, You, Kumar, Mulla, Yang, Jin and Liu (2026)",
                     paper="https://arxiv.org/abs/2608.06404", license="CC BY 4.0",
-                    camera="DJI Mavic 3M RGB, 12-18 m above ground, nadir and 45-degree oblique, RTK positioned"),
+                    camera="DJI Mavic 3M RGB, nadir and 45-degree oblique, RTK positioned"),
         grid=g, texture=dict(width=tx["width"], height=tx["height"], cell_m=tx["cell_m"]),
         ground_z=round(ground_z, 3), fusion=meta["fusion"], holes_filled_fraction=meta["holes_filled_fraction"],
         greenness=dict(cell_m=CELL, rows=H, cols=W, p5=round(float(p5), 4), p50=round(float(p50), 4), p95=round(float(p95), 4),

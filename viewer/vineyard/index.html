@@ -78,7 +78,7 @@ dialog button { background:var(--panel-2); border:1px solid var(--line); color:v
   const sAll = S.faces.flatMap(f => f.tiles.flatMap(t => [t.s0, t.s1]));
   const sMin = Math.min(...sAll), sMax = Math.max(...sAll), sMid = (sMin + sMax) / 2;
   const fromSouth = (s) => (s - sMin).toFixed(1);
-  const g = new THREE.Mesh(new THREE.PlaneGeometry(sMax - sMin + 20, 14), new THREE.MeshLambertMaterial({ color: 0xc9b38a }));
+  const g = new THREE.Mesh(new THREE.PlaneGeometry(sMax - sMin + 120, 120), new THREE.MeshLambertMaterial({ color: 0xc9b38a }));
   g.rotation.x = -Math.PI / 2; scene.add(g);
   const dec = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
   const loader = new THREE.TextureLoader();
@@ -133,9 +133,9 @@ dialog button { background:var(--panel-2); border:1px solid var(--line); color:v
 
   // ---------- camera ----------
   const views = {
-    side: [new THREE.Vector3(-3.5, 1.45, -1.6), new THREE.Vector3(0.5, 0.9, 0)],
-    other: [new THREE.Vector3(3.5, 1.45, 1.6), new THREE.Vector3(-0.5, 0.9, 0)],
-    top: [new THREE.Vector3(-30, 18, -14), new THREE.Vector3(0, 0.5, 0)],
+    side: [new THREE.Vector3(-5.5, 2.1, -3.6), new THREE.Vector3(0.5, 0.9, 0)],
+    other: [new THREE.Vector3(5.5, 2.1, 3.6), new THREE.Vector3(-0.5, 0.9, 0)],
+    top: [new THREE.Vector3(-8, 17, -27), new THREE.Vector3(-6, 0.5, 0)],
   };
   let anim = null;
   const flyTo = (p, t, ms = 1300) => {

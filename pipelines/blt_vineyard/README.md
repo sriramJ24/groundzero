@@ -28,6 +28,6 @@ median on both faces, with at least half the band covered on each. Each flag get
 the slice boxed (projected with the recorded pose). Frames 0-4 are never used (the operator is in view).
 
 On the June 22, 2022 sample: 83 slices (41.5 m) were covered from both alleys, 4 flags. Looking at the photos, all four are open
-stretches you can see through to the next row or the lawn; two sit at a trellis post. There is no ground truth, so no accuracy figure.
+stretches you can see through to the next row or the lawn; at least one sits at a trellis post. There is no ground truth, so no accuracy figure.
 
 The viewer is `viewer/vineyard/` (copy `$BLT_WORK/site/` there after export.py and flags.py).

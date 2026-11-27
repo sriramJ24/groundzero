@@ -1,0 +1,388 @@
+<title>GroundZero Field Pass</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a full-height 3D stage with a working side panel (stacks under the stage on phones). */
+:root {
+  --bg: #f3f5f1; --panel: #ffffff; --ink: #18211a; --muted: #5b675d; --line: #dde3db;
+  --field: #2f6b3a; --soil: #7a5a3c; --flag: #e0a019; --flag-ink: #6b4a00; --thin: #7d56c2;
+  --ok: #2e7d4f; --stage: #cfd8cf; --chip: #eef2ec;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1511; --panel: #151d17; --ink: #e6ece6; --muted: #9aa79c; --line: #263129;
+  --field: #6fbf7e; --soil: #c49a72; --flag: #f2b636; --flag-ink: #f6cf72; --thin: #b296ea;
+  --ok: #6fcf97; --stage: #1b241e; --chip: #1e2921; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1511; --panel: #151d17; --ink: #e6ece6; --muted: #9aa79c; --line: #263129;
+  --field: #6fbf7e; --soil: #c49a72; --flag: #f2b636; --flag-ink: #f6cf72; --thin: #b296ea;
+  --ok: #6fcf97; --stage: #1b241e; --chip: #1e2921; color-scheme: dark }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--body); }
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr; }
+header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  border-bottom: 1px solid var(--line); background: var(--panel); }
+.brand { font: 800 17px/1 var(--display); letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 8px; }
+.brand small { font: 500 12px var(--body); color: var(--muted); letter-spacing: 0; }
+.crops { display: flex; gap: 4px; background: var(--chip); padding: 3px; border-radius: 9px; }
+.crops button { font: 600 13px var(--body); color: var(--muted); background: none; border: 0; padding: 6px 14px; border-radius: 7px; cursor: pointer; }
+.crops button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
+.sim { margin-left: auto; font: 500 12px var(--mono); color: var(--flag-ink); border: 1px solid var(--flag); padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0; }
+.stage { position: relative; background: var(--stage); min-height: 0; overflow: hidden; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.views { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+.views button, .tool { font: 600 12px var(--body); background: var(--panel); color: var(--ink); border: 1px solid var(--line); padding: 6px 10px; border-radius: 7px; cursor: pointer; }
+.views button[aria-pressed="true"] { border-color: var(--ink); }
+.views button:disabled { color: var(--muted); cursor: not-allowed; opacity: .75; }
+button:focus-visible { outline: 2px solid var(--flag); outline-offset: 2px; }
+.legend { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); bottom: 12px; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px 10px; font: 12px var(--body); color: var(--muted); max-width: calc(100% - 24px); }
+.labels { position: absolute; inset: 0; pointer-events: none; }
+.pin { position: absolute; transform: translate(-50%, -100%); pointer-events: auto; cursor: pointer; font: 600 11px var(--mono);
+  color: #1a1300; background: var(--flag); border: 2px solid #1a1300; border-radius: 6px; padding: 1px 5px; white-space: nowrap; }
+.pin.thin { background: var(--thin); color: #fff; border-color: #22113f; }
+.pin.soil { background: var(--soil); color: #fff; border-color: #2b1c0e; }
+.pin[aria-current="true"] { outline: 3px solid var(--panel); transform: translate(-50%, -100%) scale(1.15); }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font: 500 13px var(--mono); }
+aside { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; min-height: 0;
+  padding-block: 16px 24px; padding-left: 18px; padding-right: max(18px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 18px; }
+h1 { font: 700 22px/1.15 var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h2 { font: 700 12px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; }
+p { margin: 0; }
+.meta { color: var(--muted); font-size: 13px; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; margin: 0; }
+.facts div { min-width: 0; }
+.facts dt { font-size: 12px; color: var(--muted); }
+.facts dd { margin: 0; font: 500 14px var(--mono); font-variant-numeric: tabular-nums; }
+.score { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 6px; }
+.score strong { font: 800 26px/1 var(--display); }
+.score .meta { font-size: 12px; }
+.planted { display: flex; flex-wrap: wrap; gap: 6px; }
+.planted span { font: 500 12px var(--body); background: var(--chip); border-radius: 99px; padding: 2px 9px; }
+.planted span.found::before { content: "✓ "; color: var(--ok); font-weight: 700; }
+.planted span.missed::before { content: "✗ "; color: #c0392b; font-weight: 700; }
+.flaglist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.flaglist button { width: 100%; text-align: left; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+  background: none; border: 1px solid var(--line); border-radius: 9px; padding: 9px 10px; cursor: pointer; color: var(--ink); font: inherit; }
+.flaglist button[aria-current="true"] { border-color: var(--ink); background: var(--chip); }
+.kind { width: 10px; height: 28px; border-radius: 3px; background: var(--flag); }
+.kind.thin { background: var(--thin); } .kind.soil { background: var(--soil); }
+.flaglist .t { font-weight: 600; } .flaglist .s { font-size: 12px; color: var(--muted); }
+.flaglist .n { font: 500 12px var(--mono); color: var(--muted); }
+.detail { display: grid; gap: 10px; }
+.detail .vals { font: 13px var(--mono); font-variant-numeric: tabular-nums; }
+.photos { display: grid; gap: 10px; }
+figure { margin: 0; display: grid; gap: 4px; }
+figure img { border-radius: 8px; border: 1px solid var(--line); width: 100%; height: auto; cursor: zoom-in; }
+figcaption { font: 11px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.caveat { font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+.empty { color: var(--muted); font-size: 13px; }
+.zoom { position: fixed; inset: 0; background: rgb(0 0 0 / .85); display: grid; place-items: center; z-index: 20;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); cursor: zoom-out; }
+.zoom img { max-height: 100%; border-radius: 8px; }
+@media (max-width: 820px) {
+  .app { height: auto; min-height: 100%; }
+  main { grid-template-columns: 1fr; }
+  .stage { height: 56vh; min-height: 320px; }
+  aside { border-left: 0; border-top: 1px solid var(--line); overflow: visible; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .sim { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">GroundZero <small>field pass</small></div>
+    <nav class="crops" aria-label="Crop">
+      <button id="c-corn" data-crop="corn">Corn</button>
+      <button id="c-vineyard" data-crop="vineyard">Vineyard</button>
+      <button id="c-potato" data-crop="potato">Potato</button>
+    </nav>
+    <span class="sim" title="Rendered in Blender, not real farm photos">Simulated field · demo data</span>
+  </header>
+  <main>
+    <div class="stage" id="stage">
+      <canvas id="gl" aria-label="3D view of the field"></canvas>
+      <div class="labels" id="labels"></div>
+      <div class="views" role="group" aria-label="View">
+        <button id="v-3d" aria-pressed="true">3D</button>
+        <button id="v-top" aria-pressed="false">Top-down map</button>
+        <button id="v-photoreal" disabled title="Photoreal 3D is being made from these photos on a GPU">Photoreal (coming)</button>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="loading" id="loading">Loading the pass…</div>
+    </div>
+    <aside id="side" aria-live="polite"></aside>
+  </main>
+</div>
+<div class="zoom" id="zoom" hidden><img id="zoomimg" alt=""></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const CROPS = { corn: 'Corn', vineyard: 'Vineyard', potato: 'Potato' };
+const KIND_CLASS = (k) => /thin|missing|shorter/.test(k) ? 'thin' : /soil/.test(k) ? 'soil' : 'pale';
+const cache = {};
+let S = null, crop = null, selected = null, pins = [], view = '3d';
+
+// ---------- three.js stage ----------
+const canvas = $('gl'), stage = $('stage');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 500);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.495;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x6b5a45, 0.75));
+const sun = new THREE.DirectionalLight(0xffffff, 0.55); sun.position.set(-20, 30, 15); scene.add(sun);
+let world = new THREE.Group(); scene.add(world);
+let marks = new THREE.Group(); scene.add(marks);
+// field frame: x east, y north, z up  ->  three: X = x, Y = z, Z = -y
+const V = (x, y, z) => new THREE.Vector3(x, z, -y);
+
+function bg() { const c = getComputedStyle(document.documentElement).getPropertyValue('--stage').trim(); scene.background = new THREE.Color(c || '#cfd8cf'); }
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', bg);
+new MutationObserver(bg).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+function resize() { const r = stage.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage);
+
+const loader = new THREE.TextureLoader();
+const tex = (url) => new Promise((res, rej) => loader.load(url, (t) => { t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; res(t); }, undefined, rej));
+const b64u8 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+
+function clear(g) { g.traverse((o) => { o.geometry?.dispose(); if (o.material) { o.material.map?.dispose(); o.material.dispose(); } }); g.clear(); }
+
+let surf = null;  // {nx, ny, x0, y0, grid, h}
+function heightAt(x, y) {
+  if (!surf) return S?.canopy_m ? S.canopy_m[1] : 0;
+  const i = Math.max(0, Math.min(surf.nx - 1, Math.floor((x - surf.x0) / surf.grid)));
+  const j = Math.max(0, Math.min(surf.ny - 1, Math.floor((y - surf.y0) / surf.grid)));
+  return surf.h[j * surf.nx + i] / 100;
+}
+
+async function buildSurface(base) {
+  const [x0, x1, y0, y1] = S.extent, nx = S.nx, ny = S.ny, g = S.grid_m;
+  const h = b64u8(S.height_cm_u8), shown = S.shown_u8 ? b64u8(S.shown_u8) : null; surf = { nx, ny, x0, y0, grid: g, h };
+  const pos = new Float32Array(nx * ny * 3), uv = new Float32Array(nx * ny * 2), idx = [];
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const k = j * nx + i, x = x0 + (i + 0.5) * g, y = y0 + (j + 0.5) * g;
+    pos.set([x, h[k] / 100, -y], k * 3); uv.set([(x - x0) / (x1 - x0), (y - y0) / (y1 - y0)], k * 2);
+    if (i < nx - 1 && j < ny - 1 && (!shown || (shown[k] && shown[k + 1] && shown[k + nx] && shown[k + nx + 1]))) idx.push(k, k + 1, k + nx, k + 1, k + nx + 1, k + nx);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geo.setIndex(idx); geo.computeVertexNormals();
+  const map = await tex(base + S.texture.file);
+  world.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map, side: THREE.DoubleSide })));
+  // soil skirt around the section so it reads as a block cut from a field
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 + 16, y1 - y0 + 16), new THREE.MeshLambertMaterial({ color: 0x5c4733 }));
+  ground.rotation.x = -Math.PI / 2; ground.position.set((x0 + x1) / 2, -0.02, -(y0 + y1) / 2); world.add(ground);
+  return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, span: Math.max(x1 - x0, y1 - y0), top: S.heights_m.p95 };
+}
+
+async function buildRows(base) {
+  surf = null;
+  const half = S.section_m / 2, [z0, z1] = S.canopy_m;
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(S.section_m + 10, S.section_m + 10), new THREE.MeshLambertMaterial({ color: 0x4f5a33 }));
+  ground.rotation.x = -Math.PI / 2; world.add(ground);
+  const grey = new THREE.MeshLambertMaterial({ color: 0x8a9488, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+  const trunk = new THREE.MeshLambertMaterial({ color: 0x4a3626 });
+  for (const [r, x] of S.rows_x_m.entries()) {
+    // trunks and cordon zone below the canopy, a thin wall so the rows read as rows
+    const t = new THREE.Mesh(new THREE.BoxGeometry(0.06, z0, S.section_m - 2), trunk); t.position.set(x, z0 / 2, 0); world.add(t);
+    for (const side of ['W', 'E']) {
+      const f = S.faces.find((q) => q.row === r && q.side === side);
+      const xs = x + (side === 'W' ? -0.22 : 0.22);
+      const [ya, yb] = f ? f.y_range : [-half + 1, half - 1];
+      const geo = new THREE.PlaneGeometry(yb - ya, z1 - z0);
+      let mat = grey;
+      if (f) { const map = await tex(base + f.image); mat = new THREE.MeshLambertMaterial({ map, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide }); }
+      const m = new THREE.Mesh(geo, mat);
+      // turn the plane to face its camera alley, mirrored so image left (south) lands at the south end
+      m.position.set(xs, (z0 + z1) / 2, -(ya + yb) / 2);
+      if (side === 'E') { m.rotation.y = -Math.PI / 2; m.scale.x = -1; }
+      else { m.rotation.y = Math.PI / 2; m.scale.x = -1; }
+      world.add(m);
+    }
+  }
+  return { cx: 0, cy: 0, span: S.section_m, top: z1 };
+}
+
+let home = null;
+function frameView(kind, ms = 900) {
+  const { cx, cy, span, top } = home;
+  const target = V(cx, cy, top * 0.5);
+  const p = kind === 'top' ? V(cx, cy - 0.01, span * 1.25) : V(cx - span * 0.55, cy - span * 0.85, span * 0.62);
+  fly(p, target, ms);
+}
+let anim = null;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function fly(p, t, ms = 900) { anim = { p0: camera.position.clone(), t0: controls.target.clone(), p, t, start: performance.now(), ms: reduced ? 0 : ms }; }
+
+function drawMarks() {
+  clear(marks);
+  for (const f of S.flags) {
+    const on = selected === f.id;
+    const col = new THREE.Color(KIND_CLASS(f.kind) === 'thin' ? 0x7d56c2 : KIND_CLASS(f.kind) === 'soil' ? 0x7a5a3c : 0xe0a019);
+    const mat = new THREE.LineBasicMaterial({ color: col, linewidth: 2 });
+    let pts;
+    if (S.kind === 'surface') {
+      const [a, b, c, d] = f.bbox, z = (x, y) => heightAt(x, y) + 0.08;
+      const ring = [[a, c], [b, c], [b, d], [a, d], [a, c]];
+      pts = [];
+      for (let k = 0; k < 4; k++) { const [xa, ya] = ring[k], [xb, yb] = ring[k + 1]; for (let s = 0; s <= 12; s++) { const x = xa + (xb - xa) * s / 12, y = ya + (yb - ya) * s / 12; pts.push(V(x, y, z(x, y))); } }
+    } else {
+      const xs = f.x + (f.face === 'W' ? -0.3 : 0.3), [ya, yb] = f.y_range, [z0, z1] = S.canopy_m;
+      pts = [V(xs, ya, z0), V(xs, yb, z0), V(xs, yb, z1), V(xs, ya, z1), V(xs, ya, z0)];
+    }
+    marks.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+    if (on) for (const e of f.evidence) {   // where each evidence photo was taken from
+      const c = V(...e.camera_m), tgt = flagPoint(f);
+      marks.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([c, tgt]), new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.3, gapSize: 0.2 })).computeLineDistances());
+      const cam = new THREE.Mesh(new THREE.SphereGeometry(S.kind === "surface" ? 0.25 : 0.07, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffffff })); cam.position.copy(c); marks.add(cam);
+    }
+  }
+}
+function flagPoint(f) {
+  if (S.kind === 'surface') return V(f.x, f.y, heightAt(f.x, f.y) + 0.1);
+  return V(f.x + (f.face === 'W' ? -0.3 : 0.3), f.y, S.canopy_m[1]);
+}
+function drawPins() {
+  $('labels').replaceChildren(); pins = [];
+  for (const f of S.flags) {
+    const el = document.createElement('button');
+    el.className = 'pin ' + (KIND_CLASS(f.kind) === 'pale' ? '' : KIND_CLASS(f.kind));
+    el.textContent = f.id; el.setAttribute('aria-label', `${f.id}: ${f.kind}`);
+    if (selected === f.id) el.setAttribute('aria-current', 'true');
+    el.onclick = () => select(f.id);
+    $('labels').append(el); pins.push({ el, v: flagPoint(f).add(new THREE.Vector3(0, S.kind === 'surface' ? 0.6 : 0.4, 0)) });
+  }
+}
+
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (anim) {
+    const k = anim.ms ? Math.min(1, (now - anim.start) / anim.ms) : 1, e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+    camera.position.lerpVectors(anim.p0, anim.p, e); controls.target.lerpVectors(anim.t0, anim.t, e);
+    if (k >= 1) anim = null;
+  }
+  controls.update(); renderer.render(scene, camera);
+  const r = stage.getBoundingClientRect();
+  for (const p of pins) {
+    const v = p.v.clone().project(camera), vis = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05;
+    p.el.hidden = !vis;
+    if (vis) { p.el.style.left = ((v.x + 1) / 2 * r.width) + 'px'; p.el.style.top = ((1 - v.y) / 2 * r.height) + 'px'; }
+  }
+}
+requestAnimationFrame(frame);
+
+// ---------- side panel ----------
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmtDate = (s) => s ? new Date(s).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'not recorded';
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+function size(f) { return f.area_m2 != null ? `${f.area_m2} m²` : `${f.length_m} m of row`; }
+function where(f) { return S.kind === 'rows' ? `Row ${f.row + 1}, ${f.face === 'W' ? 'west' : 'east'} face, ${f.y_range[0]} to ${f.y_range[1]} m` : `${f.x} m E, ${f.y} m N of section centre`; }
+function value(f) {
+  if (f.greenness != null) return `greenness ${f.greenness.toFixed(3)} · pass median ${f.pass_median.toFixed(3)}`;
+  if (f.canopy_top_m != null) return `canopy top ${f.canopy_top_m} m · pass median ${f.pass_median_m} m`;
+  if (f.canopy_fill != null) return `canopy filled ${Math.round(f.canopy_fill * 100)}% · pass median ${Math.round(f.pass_median * 100)}%`;
+  if (f.soil_fraction != null) return `soil in ${Math.round(f.soil_fraction * 100)}% of view · pass median ${Math.round(f.pass_median * 100)}%`;
+  return '';
+}
+
+function renderSide() {
+  const sc = S.score_on_simulated_data;
+  const facts = S.kind === 'surface'
+    ? [['Photos in pass', S.pass_photos], ['Cameras', `${S.pass_devices.length} on pivot`], ['Canopy top (median)', `${S.heights_m.p50.toFixed(2)} m`], ['Area measured in 3D', `${Math.round(S.measured_fraction * 100)}%`]]
+    : [['Photos in pass', S.pass_photos], ['Cameras', `${S.pass_devices.length} on tractor`], ['Row faces mapped', `${S.faces.length} of ${S.rows_x_m.length * 2}`], ['Canopy filled (median)', `${Math.round(S.pass_stats.canopy_fill_median * 100)}%`]];
+  const f = S.flags.find((q) => q.id === selected);
+  $('side').innerHTML = `
+    <div>
+      <h1>${CROPS[crop]} ${S.kind === 'rows' ? 'block' : 'section'}, ${S.section_m} × ${S.section_m} m</h1>
+      <p class="meta">Pass on ${fmtDate(S.pass_start)} · crop health not assessed</p>
+    </div>
+    <dl class="facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+    ${f ? detail(f) : list()}
+    ${sc ? `<div class="score"><h2>Check against the simulation</h2>
+      <p><strong>${sc.found} of ${sc.planted}</strong> planted problems flagged</p>
+      <div class="planted">${S.planted.map((p) => `<span class="${p.found ? 'found' : 'missed'}">${esc(cap(p.kind))}</span>`).join('')}</div>
+      <p class="meta">${sc.flags} flags, ${sc.flags_not_near_a_planted_problem} away from a planted problem. ${esc(sc.note)}</p></div>` : ''}
+    <p class="caveat">${esc(S.note)} Photos were rendered in Blender for this demo; camera positions are exact, not measured.${S.kind === 'rows' ? ' ' + esc(S.note_faces) : ''}</p>`;
+  $('side').querySelectorAll('[data-flag]').forEach((b) => b.onclick = () => select(b.dataset.flag));
+  $('side').querySelectorAll('figure img').forEach((im) => im.onclick = () => { $('zoomimg').src = im.src; $('zoomimg').alt = im.alt; $('zoom').hidden = false; });
+  const back = $('back'); if (back) back.onclick = () => select(null);
+}
+function list() {
+  if (!S.flags.length) return `<div><h2>Places to look</h2><p class="empty">Nothing in this pass stands out from the rest.</p></div>`;
+  return `<div><h2>Places to look · ${S.flags.length}</h2><ul class="flaglist">${S.flags.map((f) => `
+    <li><button data-flag="${f.id}" ${selected === f.id ? 'aria-current="true"' : ''}>
+      <span class="kind ${KIND_CLASS(f.kind)}"></span>
+      <span><span class="t">${esc(cap(f.kind))}</span><br><span class="s">${esc(size(f))} · ${f.evidence.length} photos</span></span>
+      <span class="n">${f.id}</span></button></li>`).join('')}</ul></div>`;
+}
+function detail(f) {
+  return `<div class="detail">
+    <button class="tool" id="back">← All places to look</button>
+    <div><h2>${f.id} · ${esc(size(f))}</h2><h1>${esc(cap(f.kind))}</h1></div>
+    <p class="meta">${esc(where(f))}</p>
+    <p class="vals">${esc(value(f))}</p>
+    <div><h2>Photos that show it</h2><div class="photos">${f.evidence.map((e) => `
+      <figure><img src="${base()}${e.file}" alt="Photo ${esc(e.source)} with the flagged area boxed" loading="lazy" width="960" height="540">
+      <figcaption>${esc(e.source)} · ${new Date(e.captured).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', second: '2-digit', timeZone: 'UTC' })} UTC · boxed area is ${f.id}</figcaption></figure>`).join('') || '<p class="empty">No photo shows this area.</p>'}</div></div>
+  </div>`;
+}
+function legend() {
+  $('legend').innerHTML = S.kind === 'surface'
+    ? 'Surface shaped by measured canopy height, coloured from the photos. Bare patches were not measured. Drag to orbit, pinch or scroll to zoom.'
+    : 'Each row face coloured from the photos taken beside it; grey faces were not photographed. Drag to orbit.';
+}
+
+function select(id) {
+  selected = id; drawMarks(); drawPins(); renderSide();
+  if (id) {
+    const f = S.flags.find((q) => q.id === id), t = flagPoint(f);
+    const off = S.kind === 'surface' ? new THREE.Vector3(-5, 7, 8) : new THREE.Vector3(f.face === 'W' ? -6 : 6, 3, 5);
+    fly(t.clone().add(off), t, 900);
+  } else frameView(view);
+  if (matchMedia('(max-width: 820px)').matches && id) stage.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
+}
+const base = () => `data/${crop}/`;
+
+async function load(c) {
+  if (!CROPS[c]) c = 'corn';
+  crop = c; selected = null;
+  for (const k of Object.keys(CROPS)) $('c-' + k).setAttribute('aria-pressed', String(k === c));
+  $('loading').hidden = false; $('loading').textContent = 'Loading the pass…';
+  try {
+    S = cache[c] || (cache[c] = await (await fetch(base() + 'scene.json')).json());
+    clear(world); clear(marks);
+    home = S.kind === 'surface' ? await buildSurface(base()) : await buildRows(base());
+    camera.far = home.span * 8; camera.updateProjectionMatrix();
+    const { cx, cy, span } = home; controls.minDistance = 2; controls.maxDistance = span * 3;
+    if (!camera.userData.placed) { camera.position.copy(V(cx - span * 0.55, cy - span * 0.85, span * 0.62)); controls.target.copy(V(cx, cy, 0)); camera.userData.placed = true; }
+    frameView(view); drawMarks(); drawPins(); renderSide(); legend();
+    $('loading').hidden = true;
+  } catch (err) {
+    $('loading').textContent = `Could not load the ${CROPS[c].toLowerCase()} pass (${err.message}). Reload to try again.`;
+  }
+}
+
+document.querySelectorAll('.crops button').forEach((b) => b.onclick = () => { if (location.hash !== '#' + b.dataset.crop) location.hash = b.dataset.crop; else load(b.dataset.crop); });
+$('v-3d').onclick = () => setView('3d'); $('v-top').onclick = () => setView('top');
+function setView(v) { view = v; $('v-3d').setAttribute('aria-pressed', String(v === '3d')); $('v-top').setAttribute('aria-pressed', String(v === 'top')); frameView(v); }
+$('zoom').onclick = () => { $('zoom').hidden = true; };
+addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!$('zoom').hidden) $('zoom').hidden = true; else if (selected) select(null); } });
+addEventListener('hashchange', () => load(location.hash.slice(1)));
+bg(); resize(); load(location.hash.slice(1) || 'corn');
+</script>

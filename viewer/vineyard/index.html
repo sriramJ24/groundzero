@@ -1,17 +1,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vineyard Row 3D</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&family=Inter:wght@400;500;600&display=swap">
 <style>
-:root { --bg:#f4f2ec; --panel:#ffffff; --panel-2:#f3f1ea; --text:#1f2a1f; --muted:#5d6b5d; --line:#d9d6cc; --accent:#2f6b3a; --flag:#e0a800; --s1:#257de0; --s2:#f47230; --band:rgba(31,42,31,.08); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#141714; --panel:#1d211d; --panel-2:#252a25; --text:#e8ede6; --muted:#9aa79a; --line:#2f362f; --accent:#7cc48a; --flag:#ffd21a; --s1:#338ced; --s2:#e76624; --band:rgba(232,237,230,.09); } }
-:root[data-theme="dark"] { --bg:#141714; --panel:#1d211d; --panel-2:#252a25; --text:#e8ede6; --muted:#9aa79a; --line:#2f362f; --accent:#7cc48a; --flag:#ffd21a; --s1:#338ced; --s2:#e76624; --band:rgba(232,237,230,.09); }
+:root { --bg:#0f1411; --panel:#161d18; --panel-2:#1d2620; --text:#e9ede6; --muted:#9aa79c; --line:#2b362e; --accent:#8fbf3c; --flag:#ffd21a; --s1:#338ced; --s2:#e76624; --band:rgba(233,237,230,.09); color-scheme:dark;
+  --display:"Newsreader", Georgia, "Times New Roman", serif; --ui:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --bg:#eef0ea; --panel:#fbfcf8; --panel-2:#f1f4ec; --text:#1b231d; --muted:#5d6b60; --line:#d7ddd0; --accent:#4d7c0f; --flag:#e0a800; --s1:#257de0; --s2:#f47230; --band:rgba(27,35,29,.08); color-scheme:light; } }
+:root[data-theme="light"] { --bg:#eef0ea; --panel:#fbfcf8; --panel-2:#f1f4ec; --text:#1b231d; --muted:#5d6b60; --line:#d7ddd0; --accent:#4d7c0f; --flag:#e0a800; --s1:#257de0; --s2:#f47230; --band:rgba(27,35,29,.08); color-scheme:light; }
 * { box-sizing:border-box; }
-html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif; }
+html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font:14px/1.45 var(--ui); }
 #app { position:fixed; inset:0; display:grid; grid-template-columns:minmax(0,1fr) 380px; }
 #stage { position:relative; overflow:hidden; min-height:0; }
 #stage canvas { display:block; }
 aside { background:var(--panel); border-left:1px solid var(--line); overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
-h1 { font-size:17px; margin:0; } h2 { font-size:16px; margin:2px 0 0; } h3 { font-size:13px; margin:0 0 6px; }
+h1 { font-family:var(--display); font-weight:500; font-size:26px; line-height:1.1; margin:0; } h2 { font-family:var(--display); font-weight:500; font-size:21px; margin:2px 0 0; } h3 { font-family:var(--display); font-weight:500; font-size:17px; margin:0 0 6px; }
 .sub { margin:4px 0 0; color:var(--muted); font-size:12.5px; }
 .eyebrow { font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
 .card { background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; }

@@ -88,4 +88,6 @@ for name,d in out.items():
     cv2.imwrite(os.environ.get('BLT_WORK','/tmp/blt_work/')+f'tex_{name}.jpg',tex,[cv2.IMWRITE_JPEG_QUALITY,88])
     cv2.imwrite(os.environ.get('BLT_WORK','/tmp/blt_work/')+f'alpha_{name}.png',alpha)
     np.save(os.environ.get('BLT_WORK','/tmp/blt_work/')+f'src_{name}.npy',src[::-1])
+    seen=sh&np.isfinite(best)
+    np.save(os.environ.get('BLT_WORK','/tmp/blt_work/')+f'seen_{name}.npy',seen[::-1])  # spots a photo covered (canopy or gap), for flags.py
     print(name,'texture',tw,th,'coverage %.2f'%(alpha>0).mean())

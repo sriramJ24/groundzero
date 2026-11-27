@@ -1,0 +1,117 @@
+{
+ "camera_intrinsics": {
+  "topic": "/side/zed_node/rgb/camera_info",
+  "frame_id": "side_left_camera_optical_frame",
+  "width": 1920,
+  "height": 1080,
+  "K": [
+   1066.106689453125,
+   0.0,
+   962.283447265625,
+   0.0,
+   1066.106689453125,
+   540.8816528320312,
+   0.0,
+   0.0,
+   1.0
+  ],
+  "D": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "distortion_model": "plumb_bob",
+  "P": [
+   1066.106689453125,
+   0.0,
+   962.283447265625,
+   0.0,
+   0.0,
+   1066.106689453125,
+   540.8816528320312,
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   0.0
+  ],
+  "note": "image_rect_color is already rectified; D is zero"
+ },
+ "camera_to_base": {
+  "as_recorded_zed_tf": {
+   "parent": "base_link",
+   "child": "side_left_camera_optical_frame",
+   "chain": "base_link>side_base_link>side_camera_center>side_left_camera_frame>side_left_camera_optical_frame",
+   "translation": [
+    -0.009987502603949662,
+    0.05999999999999999,
+    0.015499791692706783
+   ],
+   "rotation_xyzw": [
+    -0.5123424560952075,
+    0.5123424560928211,
+    -0.4873450601804951,
+    0.4873450601830038
+   ],
+   "warning": "The bag's tf_static links base_link to side_base_link with an IDENTITY transform, so this chain does not contain the real mounting position/orientation on the robot."
+  },
+  "urdf_candidate": {
+   "parent": "base_link",
+   "child": "1_zed2_left_camera_optical_frame",
+   "chain": "base_link>sensor_box_1>1_zed2_camera_center>1_zed2_left_camera_frame>1_zed2_left_camera_optical_frame",
+   "translation": [
+    -0.08299999999879917,
+    0.30000037960769377,
+    0.9339999999999999
+   ],
+   "rotation_xyzw": [
+    -0.7071067811812783,
+    2.2368580561704654e-06,
+    -2.2368580561704654e-06,
+    0.7071067811847407
+   ],
+   "warning": "From the robot URDF in the same tf_static. It describes a ZED2 on the sensor box yawed +90 deg (facing the robot's left). That it is the camera publishing /side/zed_node is an inference, not stated in the bag."
+  },
+  "gps_antenna_base_link_to_gps_back": {
+   "parent": "base_link",
+   "child": "gps_back",
+   "stamp": 1655894344.645003,
+   "translation": [
+    -0.297,
+    0.31,
+    1.378
+   ],
+   "rotation_xyzw": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ]
+  }
+ },
+ "K_rgb_scaled": [
+  710.73779296875,
+  0,
+  641.5222981770833,
+  0,
+  710.73779296875,
+  360.5877685546875,
+  0,
+  0,
+  1
+ ],
+ "K_depth_scaled": [
+  177.6844482421875,
+  0,
+  160.38057454427084,
+  0,
+  177.6844482421875,
+  90.14694213867188,
+  0,
+  0,
+  1
+ ],
+ "note": "camera_intrinsics.K is for the full 1920x1080 originals; use K_rgb_scaled for rgb/*.jpg (1280x720) and K_depth_scaled for depth/*.png (320x180)."
+}

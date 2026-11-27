@@ -1,0 +1,93 @@
+<title>Vineyard Row 3D</title>
+<style>
+:root { --bg:#f4f2ec; --panel:#ffffff; --text:#1f2a1f; --muted:#5d6b5d; --line:#d9d6cc; --accent:#2f6b3a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#141714; --panel:#1d211d; --text:#e8ede6; --muted:#9aa79a; --line:#2f362f; --accent:#7cc48a; } }
+:root[data-theme="dark"] { --bg:#141714; --panel:#1d211d; --text:#e8ede6; --muted:#9aa79a; --line:#2f362f; --accent:#7cc48a; }
+html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif; }
+#stage { position:fixed; inset:0; }
+.card { position:fixed; left:calc(16px + env(safe-area-inset-left, 0px)); top:calc(16px + env(safe-area-inset-top, 0px)); max-width:360px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+.card h1 { font-size:16px; margin:0 0 4px; }
+.card p { margin:4px 0; color:var(--muted); font-size:13px; }
+.btns { position:fixed; left:calc(16px + env(safe-area-inset-left, 0px)); bottom:calc(16px + env(safe-area-inset-bottom, 0px)); display:flex; gap:8px; flex-wrap:wrap; }
+.btns button { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:7px 11px; font:inherit; cursor:pointer; }
+@media (max-width:600px) { .card { right:16px; max-width:none; } }
+</style>
+<div id="stage"></div>
+<div class="card">
+  <h1>Vineyard row, real photos</h1>
+  <p>One vine row, both faces, built from 220 photos and depth taken every 0.5 m by a camera on a ground robot driving the alleys. June 22, 2022, Ktima Gerovassiliou, Greece.</p>
+  <p>Holes are places where the camera saw through the canopy. Only the band the side camera could see (about 0.5 to 1.4 m up) is shown. Drag to orbit, scroll to zoom.</p>
+  <p style="font-size:12px">Data: Bacchus Long-Term dataset, University of Lincoln (Polvara et al. 2024), CC BY 4.0.</p>
+</div>
+<div class="btns"><button data-v="side">Alley view</button><button data-v="other">Other side</button><button data-v="top">Overview</button></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(async () => {
+  const S = await (await fetch('data/scene.json')).json();
+  const el = document.getElementById('stage');
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  el.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xcfe3f0);
+  scene.fog = new THREE.Fog(0xcfe3f0, 30, 90);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 300);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7a5a, 1.0));
+  const sAll = S.faces.flatMap(f => f.tiles.flatMap(t => [t.s0, t.s1]));
+  const sMin = Math.min(...sAll), sMax = Math.max(...sAll), sMid = (sMin + sMax) / 2;
+  // ground
+  const g = new THREE.Mesh(new THREE.PlaneGeometry(sMax - sMin + 20, 14), new THREE.MeshLambertMaterial({ color: 0xc9b38a }));
+  g.rotation.x = -Math.PI / 2; g.position.set(0, 0, 0); scene.add(g);
+  const dec = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const loader = new THREE.TextureLoader();
+  for (const f of S.faces) {
+    const off = dec(f.offset_b64), shown = dec(f.shown_b64);
+    for (const t of f.tiles) {
+      const c0 = Math.max(0, Math.floor((t.s0 - f.s0) / f.step)), c1 = Math.min(f.cols - 1, Math.ceil((t.s1 - f.s0) / f.step));
+      const nx = c1 - c0 + 1, ny = f.rows;
+      const pos = [], uv = [], idx = [];
+      for (let r = 0; r < ny; r++) for (let c = c0; c <= c1; c++) {
+        const s = f.s0 + (c + 0.5) * f.step, z = f.z1 - (r + 0.5) * f.step * 1; // rows stored top-first
+        const o = (off[r * f.cols + c] - 128) * f.offset_scale;
+        pos.push(s - sMid, z, o);
+        uv.push((s - t.s0) / (t.s1 - t.s0), 1 - (f.z1 - z) / (f.z1 - f.z0));
+      }
+      for (let r = 0; r < ny - 1; r++) for (let c = 0; c < nx - 1; c++) {
+        const a = r * nx + c, b = a + 1, d = a + nx, e = d + 1;
+        const cc = c0 + c;
+        if (!shown[r * f.cols + cc] && !shown[(r + 1) * f.cols + cc + 1]) continue;
+        idx.push(a, d, b, b, d, e);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      geo.setIndex(idx); geo.computeVertexNormals();
+      const tex = loader.load('data/' + t.file); tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 8;
+      const m = new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
+      scene.add(new THREE.Mesh(geo, m));
+    }
+  }
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  // posts every ~5 m along the row centre, trellis wire
+  const wireM = new THREE.LineBasicMaterial({ color: 0x555555 });
+  for (const h of [0.75, 1.15]) scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(sMin - sMid, h, 0), new THREE.Vector3(sMax - sMid, h, 0)]), wireM));
+  // robot track
+  const pts = S.track.map(([s, n]) => new THREE.Vector3(s - sMid, 0.02, n));
+  const trk = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: 0x2f6b3a, dashSize: 0.4, gapSize: 0.25 }));
+  trk.computeLineDistances(); scene.add(trk);
+  const views = {
+    side: [new THREE.Vector3(-3.5, 1.45, -1.6), new THREE.Vector3(0.5, 0.9, 0)],
+    other: [new THREE.Vector3(3.5, 1.45, 1.6), new THREE.Vector3(-0.5, 0.9, 0)],
+    top: [new THREE.Vector3(-30, 18, -14), new THREE.Vector3(0, 0.5, 0)],
+  };
+  const go = (k) => { camera.position.copy(views[k][0]); controls.target.copy(views[k][1]); controls.update(); };
+  document.querySelectorAll('.btns button').forEach(b => b.onclick = () => go(b.dataset.v));
+  go('side');
+  const resize = () => { renderer.setSize(el.clientWidth, el.clientHeight); camera.aspect = el.clientWidth / el.clientHeight; camera.updateProjectionMatrix(); };
+  addEventListener('resize', resize); resize();
+  renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+})();
+</script>

@@ -1,0 +1,248 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vineyard Row 3D</title>
+<style>
+:root { --bg:#f4f2ec; --panel:#ffffff; --panel-2:#f3f1ea; --text:#1f2a1f; --muted:#5d6b5d; --line:#d9d6cc; --accent:#2f6b3a; --flag:#e0a800; --s1:#257de0; --s2:#f47230; --band:rgba(31,42,31,.08); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#141714; --panel:#1d211d; --panel-2:#252a25; --text:#e8ede6; --muted:#9aa79a; --line:#2f362f; --accent:#7cc48a; --flag:#ffd21a; --s1:#338ced; --s2:#e76624; --band:rgba(232,237,230,.09); } }
+:root[data-theme="dark"] { --bg:#141714; --panel:#1d211d; --panel-2:#252a25; --text:#e8ede6; --muted:#9aa79a; --line:#2f362f; --accent:#7cc48a; --flag:#ffd21a; --s1:#338ced; --s2:#e76624; --band:rgba(232,237,230,.09); }
+* { box-sizing:border-box; }
+html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif; }
+#app { position:fixed; inset:0; display:grid; grid-template-columns:minmax(0,1fr) 380px; }
+#stage { position:relative; overflow:hidden; min-height:0; }
+#stage canvas { display:block; }
+aside { background:var(--panel); border-left:1px solid var(--line); overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
+h1 { font-size:17px; margin:0; } h2 { font-size:16px; margin:2px 0 0; } h3 { font-size:13px; margin:0 0 6px; }
+.sub { margin:4px 0 0; color:var(--muted); font-size:12.5px; }
+.eyebrow { font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.card { background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:12px; }
+.stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.stat { background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 10px; }
+.stat .k { font-size:11px; color:var(--muted); } .stat .v { font-size:20px; font-weight:600; font-variant-numeric:tabular-nums; } .stat .s { font-size:11px; color:var(--muted); }
+.list { display:flex; flex-direction:column; gap:6px; }
+.fbtn { display:flex; gap:10px; align-items:center; text-align:left; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:6px; color:var(--text); font:inherit; cursor:pointer; }
+.fbtn img { width:64px; height:36px; object-fit:cover; border-radius:6px; }
+.fbtn .n { font-weight:600; } .fbtn .m { font-size:12px; color:var(--muted); }
+.fbtn:hover, .fbtn:focus-visible { border-color:var(--accent); outline:none; }
+.lnk { background:none; border:0; color:var(--accent); font:inherit; padding:0; cursor:pointer; text-align:left; }
+figure { margin:0; } figure img { width:100%; display:block; border-radius:10px; border:1px solid var(--line); cursor:zoom-in; }
+figcaption { font-size:12px; color:var(--muted); margin-top:4px; }
+.note { font-size:12px; line-height:1.5; color:var(--muted); background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
+.note b { color:var(--text); font-weight:600; }
+.btns { position:absolute; left:calc(12px + env(safe-area-inset-left,0px)); bottom:12px; display:flex; gap:6px; flex-wrap:wrap; right:12px; }
+.btns button { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:999px; padding:7px 12px; font:inherit; font-size:13px; cursor:pointer; }
+.btns button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
+.tag { position:absolute; transform:translate(-50%,-100%); background:var(--flag); color:#1b130a; border-radius:999px; font:700 12px system-ui,sans-serif; padding:3px 9px; cursor:pointer; white-space:nowrap; border:2px solid transparent; }
+.tag.on { border-color:#1b130a; }
+.key { display:flex; gap:14px; font-size:12px; color:var(--muted); flex-wrap:wrap; }
+.key i { display:inline-block; width:14px; height:2px; vertical-align:middle; margin-right:5px; border-radius:1px; }
+.key i.band { height:10px; background:var(--band); }
+#chart { width:100%; height:120px; display:block; touch-action:pan-y; }
+#tip { font-size:12px; color:var(--muted); min-height:18px; font-variant-numeric:tabular-nums; }
+dialog { border:0; padding:0; border-radius:12px; max-width:min(960px,96vw); background:var(--panel); color:var(--text); }
+dialog img { display:block; width:100%; }
+dialog .cap { padding:10px 14px; font-size:12px; color:var(--muted); display:flex; gap:12px; justify-content:space-between; align-items:center; }
+dialog button { background:var(--panel-2); border:1px solid var(--line); color:var(--text); border-radius:999px; padding:5px 12px; font:inherit; cursor:pointer; }
+@media (max-width:820px) {
+  #app { grid-template-columns:1fr; grid-template-rows:52dvh minmax(0,1fr); }
+  aside { border-left:0; border-top:1px solid var(--line); padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); }
+}
+@media (pointer:coarse) { .tag { padding:6px 12px; font-size:13px; } .btns button { min-height:36px; } }
+</style>
+<div id="app">
+  <div id="stage"><div class="btns"><button data-v="side">West alley</button><button data-v="other">East alley</button><button data-v="top">Whole row</button></div></div>
+  <aside id="side"></aside>
+</div>
+<dialog id="dlg"><img id="dlg-img" alt=""><div class="cap"><span id="dlg-cap"></span><button onclick="dlg.close()">Close</button></div></dialog>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(async () => {
+  const [S, F] = await Promise.all([fetch('data/scene.json').then(r => r.json()), fetch('data/flags.json').then(r => r.json()).catch(() => null)]);
+  const $ = (id) => document.getElementById(id);
+  const el = $('stage'), side = $('side');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, matchMedia('(pointer:coarse)').matches ? 1.5 : 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  el.prepend(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xcfe3f0);
+  scene.fog = new THREE.Fog(0xcfe3f0, 30, 90);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 300);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7a5a, 1.0));
+  const sAll = S.faces.flatMap(f => f.tiles.flatMap(t => [t.s0, t.s1]));
+  const sMin = Math.min(...sAll), sMax = Math.max(...sAll), sMid = (sMin + sMax) / 2;
+  const fromSouth = (s) => (s - sMin).toFixed(1);
+  const g = new THREE.Mesh(new THREE.PlaneGeometry(sMax - sMin + 20, 14), new THREE.MeshLambertMaterial({ color: 0xc9b38a }));
+  g.rotation.x = -Math.PI / 2; scene.add(g);
+  const dec = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const loader = new THREE.TextureLoader();
+  const faceOff = {};
+  for (const f of S.faces) {
+    const off = dec(f.offset_b64), shown = dec(f.shown_b64);
+    let sum = 0; for (const v of off) sum += (v - 128) * f.offset_scale; faceOff[f.side] = sum / off.length;
+    for (const t of f.tiles) {
+      const c0 = Math.max(0, Math.floor((t.s0 - f.s0) / f.step)), c1 = Math.min(f.cols - 1, Math.ceil((t.s1 - f.s0) / f.step));
+      const nx = c1 - c0 + 1, ny = f.rows;
+      const pos = [], uv = [], idx = [];
+      for (let r = 0; r < ny; r++) for (let c = c0; c <= c1; c++) {
+        const s = f.s0 + (c + 0.5) * f.step, z = f.z1 - (r + 0.5) * f.step; // rows stored top-first
+        const o = (off[r * f.cols + c] - 128) * f.offset_scale;
+        pos.push(s - sMid, z, o);
+        uv.push((s - t.s0) / (t.s1 - t.s0), 1 - (f.z1 - z) / (f.z1 - f.z0));
+      }
+      for (let r = 0; r < ny - 1; r++) for (let c = 0; c < nx - 1; c++) {
+        const a = r * nx + c, b = a + 1, d = a + nx, e = d + 1, cc = c0 + c;
+        if (!shown[r * f.cols + cc] && !shown[(r + 1) * f.cols + cc + 1]) continue;
+        idx.push(a, d, b, b, d, e);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      geo.setIndex(idx);
+      const tex = loader.load('data/' + t.file); tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 8;
+      scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide })));
+    }
+  }
+  const wireM = new THREE.LineBasicMaterial({ color: 0x555555 });
+  for (const h of [0.75, 1.15]) scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(sMin - sMid, h, 0), new THREE.Vector3(sMax - sMid, h, 0)]), wireM));
+  const trk = new THREE.Line(new THREE.BufferGeometry().setFromPoints(S.track.map(([s, n]) => new THREE.Vector3(s - sMid, 0.02, n))), new THREE.LineDashedMaterial({ color: 0x2f6b3a, dashSize: 0.4, gapSize: 0.25 }));
+  trk.computeLineDistances(); scene.add(trk);
+
+  // ---------- flags: a box around each slice of the row that is thin from both alleys ----------
+  const flags = F ? F.flags : [];
+  const tags = [];
+  const flagCol = new THREE.Color(0xffd21a);
+  const zA = (faceOff.A ?? -0.14) - 0.12, zB = (faceOff.B ?? 0.14) + 0.12;
+  flags.forEach((f, i) => {
+    const w = f.s1 - f.s0, h = F.band_m[1] - F.band_m[0], d = zB - zA;
+    const box = new THREE.BoxGeometry(w, h, d);
+    const grp = new THREE.Group(); grp.position.set((f.s0 + f.s1) / 2 - sMid, (F.band_m[0] + F.band_m[1]) / 2, (zA + zB) / 2);
+    grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(box), new THREE.LineBasicMaterial({ color: flagCol })));
+    grp.add(new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: flagCol, transparent: true, opacity: 0.16, depthWrite: false })));
+    scene.add(grp);
+    const t = document.createElement('div'); t.className = 'tag'; t.textContent = i + 1; t.title = `Flag ${i + 1}`;
+    t.onclick = () => selectFlag(i); el.appendChild(t);
+    tags.push({ el: t, p: new THREE.Vector3(grp.position.x, F.band_m[1] + 0.25, grp.position.z) });
+  });
+
+  // ---------- camera ----------
+  const views = {
+    side: [new THREE.Vector3(-3.5, 1.45, -1.6), new THREE.Vector3(0.5, 0.9, 0)],
+    other: [new THREE.Vector3(3.5, 1.45, 1.6), new THREE.Vector3(-0.5, 0.9, 0)],
+    top: [new THREE.Vector3(-30, 18, -14), new THREE.Vector3(0, 0.5, 0)],
+  };
+  let anim = null;
+  const flyTo = (p, t, ms = 1300) => {
+    if (reduced) { camera.position.copy(p); controls.target.copy(t); anim = null; return; }
+    anim = { p0: camera.position.clone(), t0: controls.target.clone(), p, t, start: performance.now(), ms };
+  };
+  const press = (k) => document.querySelectorAll('.btns button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === k)));
+  const go = (k, fast) => { press(k); const [p, t] = views[k]; if (fast) { camera.position.copy(p); controls.target.copy(t); } else flyTo(p.clone(), t.clone()); };
+  document.querySelectorAll('.btns button').forEach(b => b.onclick = () => go(b.dataset.v));
+
+  // ---------- side panel ----------
+  const pct = (v) => Math.round(v * 100);
+  const chartSVG = () => {
+    if (!F) return '';
+    const Wd = 340, Ht = 120, L = 28, R = 6, T = 8, B = 20;
+    const x = (s) => L + (s - sMin) / (sMax - sMin) * (Wd - L - R), y = (v) => T + (1 - v) * (Ht - T - B);
+    const line = (side) => {
+      let d = '', pen = false;
+      for (const [b, c, seen] of F.profile[side]) { const s = b + F.bin_m / 2; if (seen < 0.5) { pen = false; continue; } d += `${pen ? 'L' : 'M'}${x(s).toFixed(1)},${y(c).toFixed(1)}`; pen = true; }
+      return `<path d="${d}" fill="none" stroke="var(--s${side === 'A' ? 1 : 2})" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    };
+    const bands = flags.map((f, i) => `<rect x="${x(f.s0).toFixed(1)}" y="${T}" width="${Math.max(3, x(f.s1) - x(f.s0)).toFixed(1)}" height="${Ht - T - B}" fill="var(--band)"/><text x="${((x(f.s0) + x(f.s1)) / 2).toFixed(1)}" y="${T + 9}" font-size="10" text-anchor="middle" fill="var(--muted)">${i + 1}</text>`).join('');
+    const grid = [0, 0.5, 1].map(v => `<line x1="${L}" x2="${Wd - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 4}" y="${y(v) + 3}" font-size="10" text-anchor="end" fill="var(--muted)">${v * 100}%</text>`).join('');
+    const ticks = [0, 10, 20, 30, 40].filter(m => m <= sMax - sMin).map(m => `<text x="${x(sMin + m)}" y="${Ht - 6}" font-size="10" text-anchor="middle" fill="var(--muted)">${m} m</text>`).join('');
+    return `<svg id="chart" viewBox="0 0 ${Wd} ${Ht}" role="img" aria-label="Canopy cover along the row for the west and east faces">${grid}${bands}${line('A')}${line('B')}${ticks}<line id="xh" y1="${T}" y2="${Ht - B}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/></svg>`;
+  };
+  function overview() {
+    selected = -1; tags.forEach(t => t.el.classList.remove('on')); saveState();
+    const len = F ? F.flags.reduce((a, f) => a + f.length_m, 0) : 0;
+    side.innerHTML = `
+      <div><div class="eyebrow">Vineyard · real photos</div><h1>One vine row, both faces</h1>
+      <p class="sub">Built from ${F ? F.photos_used : 180} photos with depth, taken every 0.5 m by a side camera on a ground robot driving both alleys. June 22, 2022, Ktima Gerovassiliou, Greece. Drag to orbit, scroll to zoom.</p></div>
+      ${F ? `<div class="stats">
+        <div class="stat"><div class="k">Row checked from both sides</div><div class="v">${F.row_checked_m} m</div><div class="s">${F.slices_checked} slices of ${F.bin_m} m</div></div>
+        <div class="stat"><div class="k">Places to look</div><div class="v">${flags.length}</div><div class="s">${len.toFixed(1)} m of row in all</div></div>
+        <div class="stat"><div class="k">Usual canopy cover, west face</div><div class="v">${pct(F.median_cover.A)}%</div><div class="s">median, ${F.band_m[0]}–${F.band_m[1]} m up</div></div>
+        <div class="stat"><div class="k">Usual canopy cover, east face</div><div class="v">${pct(F.median_cover.B)}%</div><div class="s">median, ${F.band_m[0]}–${F.band_m[1]} m up</div></div>
+      </div>
+      <div class="card"><h3>Canopy cover along the row</h3>
+        <div class="key"><span><i style="background:var(--s1)"></i>West face</span><span><i style="background:var(--s2)"></i>East face</span><span><i class="band"></i>Flagged</span></div>
+        ${chartSVG()}<div id="tip">Distance from the south end of the row. Hover for values.</div></div>
+      <div><h3>Places to look</h3><p class="sub" style="margin:0 0 8px">Slices where the canopy is thin from both alleys: under half the usual cover on the west face and on the east face. Found from the photos and depth alone, with no training.</p>
+      <div class="list">${flags.map((f, i) => `<button class="fbtn" data-i="${i}"><img src="data/${f.photos[0].file}" alt=""><span><span class="n">Flag ${i + 1} · ${fromSouth(f.s0)}–${fromSouth(f.s1)} m from the south end</span><br><span class="m">Cover ${pct(f.cover_A)}% west, ${pct(f.cover_B)}% east</span></span></button>`).join('')}</div></div>` : ''}
+      <div class="note"><b>What is real.</b> Every surface and colour comes from the robot's photos and depth. Holes are places the camera saw through the canopy. Only the band the side camera could see, about 0.5 to 1.4 m up, is shown. <b>What is inferred.</b> The camera's mounting position comes from the robot's model file; both faces line up 0.3 m apart, which supports it. <b>Not assessed.</b> ${F ? F.not_assessed : 'Vine health.'}</div>
+      <p class="sub">Data: Bacchus Long-Term dataset, Lincoln Centre for Autonomous Systems, University of Lincoln (Polvara et al. 2024), CC BY 4.0.</p>`;
+    side.querySelectorAll('.fbtn').forEach(b => b.onclick = () => selectFlag(+b.dataset.i));
+    const svg = $('chart');
+    if (svg) {
+      const tip = $('tip'), xh = $('xh');
+      const at = (ev) => { const r = svg.getBoundingClientRect(); const vx = (ev.clientX - r.left) / r.width * 340; return sMin + (vx - 28) / (340 - 34) * (sMax - sMin); };
+      const val = (sd, s) => F.profile[sd].find(([b]) => s >= b && s < b + F.bin_m);
+      svg.onpointermove = (ev) => {
+        const s = at(ev); if (s < sMin || s > sMax) return;
+        const a = val('A', s), b = val('B', s); const vx = 28 + (s - sMin) / (sMax - sMin) * 306;
+        xh.setAttribute('x1', vx); xh.setAttribute('x2', vx); xh.setAttribute('visibility', 'visible');
+        const fmt = (r) => !r || r[2] < 0.5 ? 'not seen' : pct(r[1]) + '%';
+        tip.textContent = `${fromSouth(s)} m · west ${fmt(a)} · east ${fmt(b)}`;
+      };
+      svg.onpointerleave = () => xh.setAttribute('visibility', 'hidden');
+      svg.onclick = (ev) => { const s = at(ev); const i = flags.findIndex(f => s >= f.s0 - 0.4 && s <= f.s1 + 0.4); if (i >= 0) selectFlag(i); };
+    }
+  }
+  let selected = -1;
+  function selectFlag(i, fly = true) {
+    const f = flags[i]; if (!f) return; selected = i; saveState();
+    tags.forEach((t, k) => t.el.classList.toggle('on', k === i));
+    const name = { A: 'west', B: 'east' };
+    side.innerHTML = `
+      <button class="lnk" id="back">← Whole row</button>
+      <div><div class="eyebrow">Flag ${i + 1} · place to look</div><h2>Thin canopy from both alleys</h2>
+      <p class="sub">${fromSouth(f.s0)}–${fromSouth(f.s1)} m from the south end of the row · near ${f.lat.toFixed(6)}, ${f.lon.toFixed(6)}</p></div>
+      <div class="stats">
+        <div class="stat"><div class="k">Canopy cover, west face</div><div class="v">${pct(f.cover_A)}%</div><div class="s">usual for this face ${pct(F.median_cover.A)}%</div></div>
+        <div class="stat"><div class="k">Canopy cover, east face</div><div class="v">${pct(f.cover_B)}%</div><div class="s">usual for this face ${pct(F.median_cover.B)}%</div></div>
+        <div class="stat"><div class="k">Length of row</div><div class="v">${f.length_m} m</div><div class="s">${F.band_m[0]}–${F.band_m[1]} m up</div></div>
+        <div class="stat"><div class="k">Vine condition</div><div class="v" style="font-size:16px">Not assessed</div><div class="s">cause not known from photos</div></div>
+      </div>
+      <div><div class="eyebrow" style="margin-bottom:6px">Evidence · original photos</div>
+      ${f.photos.map(p => `<figure style="margin-bottom:10px"><img src="data/${p.file}" alt="Original photo ${p.frame} from the ${name[p.side]} alley, flag ${i + 1} boxed" data-cap="Original photo ${p.frame}, taken ${p.time_utc} UTC from the ${name[p.side]} alley, about ${p.camera_m} m from the vines (downscaled). Yellow box: flag ${i + 1}, placed into the photo from its position using the robot's recorded pose."><figcaption>Photo ${p.frame} · from the ${name[p.side]} alley</figcaption></figure>`).join('')}
+      </div>
+      <div class="note"><b>Why it is flagged.</b> ${F.rule}. Seeing the same thin spot from both alleys rules out most one-photo effects such as glare or a leaf in front of the lens. <b>What it could be.</b> A missing or weak vine, heavy leaf removal or pruning, the gap at a trellis post, or the end of a vine's reach. Someone needs to look before anything is concluded.</div>
+      <p class="sub">The GPS point is the robot's position in the alley beside this spot.</p>`;
+    $('back').onclick = () => { overview(); go('side'); };
+    side.querySelectorAll('figure img').forEach(im => im.onclick = () => { $('dlg-img').src = im.src; $('dlg-cap').textContent = im.dataset.cap; $('dlg').showModal(); });
+    side.scrollTop = 0;
+    if (fly) { press(null); const x = (f.s0 + f.s1) / 2 - sMid; flyTo(new THREE.Vector3(x - 2.4, 1.6, -2.2), new THREE.Vector3(x, 0.95, 0)); }
+  }
+  // shareable link: #flag=N
+  function saveState() { try { history.replaceState(null, '', selected >= 0 ? `#flag=${selected + 1}` : location.pathname + location.search); } catch {} }
+
+  const resize = () => { renderer.setSize(el.clientWidth, el.clientHeight); camera.aspect = el.clientWidth / el.clientHeight; camera.updateProjectionMatrix(); };
+  addEventListener('resize', resize); new ResizeObserver(resize).observe(el); resize();
+  const v = new THREE.Vector3();
+  renderer.setAnimationLoop((now) => {
+    if (anim) {
+      const k = Math.min(1, (now - anim.start) / anim.ms), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      camera.position.lerpVectors(anim.p0, anim.p, e); controls.target.lerpVectors(anim.t0, anim.t, e); if (k >= 1) anim = null;
+    }
+    controls.update(); renderer.render(scene, camera);
+    const W = el.clientWidth, H = el.clientHeight;
+    for (const t of tags) {
+      v.copy(t.p).project(camera);
+      const vis = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05 && camera.position.distanceTo(t.p) < 40;
+      t.el.style.display = vis ? '' : 'none';
+      if (vis) { t.el.style.left = ((v.x + 1) / 2 * W) + 'px'; t.el.style.top = ((1 - v.y) / 2 * H) + 'px'; }
+    }
+  });
+  controls.addEventListener('start', () => { anim = null; });
+  const m = location.hash.match(/flag=(\d+)/);
+  overview(); go('side', true);
+  if (m) selectFlag(+m[1] - 1);
+})();
+</script>
